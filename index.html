@@ -683,7 +683,7 @@ var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território 
 
 // ===== GEMINI API =====
 var GEMINI_API_KEY = ''; // Cole sua chave aqui ou use campo abaixo
-var GEMINI_MODEL = 'gemini-1.5-flash-8b';
+var GEMINI_MODEL = 'gemini-1.5-flash';
 
 async function callGemini(prompt){
   var key = window.GEMINI_KEY || GEMINI_API_KEY;
@@ -694,7 +694,7 @@ async function callGemini(prompt){
     contents:[{role:'user',parts:[{text:prompt}]}],
     generationConfig:{maxOutputTokens:1200,temperature:0.7}
   };
-  var r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var r; try { r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); } catch(e) { throw new Error('Erro de conexão com a API Gemini. Verifique sua internet e se a chave está correta.'); }
   var d = await r.json();
   if(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)
     return d.candidates[0].content.parts.map(function(p){return p.text||'';}).join('');
