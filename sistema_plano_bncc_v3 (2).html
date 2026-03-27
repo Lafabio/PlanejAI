@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Planejamento BNCC — CEJA de Laguna</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f1923;--paper:#fafaf7;--cream:#f0ede3;--border:#ccc8b8;
+  --accent:#1a5276;--accent2:#1e8449;--accent3:#c0392b;
+  --shadow:0 2px 16px rgba(15,25,35,.10);--radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(0,0,0,.025) 28px);font-family:'Sora',sans-serif;color:var(--ink);min-height:100vh;}
+.nav{background:var(--accent);color:#fff;display:flex;align-items:center;gap:16px;padding:0 24px;height:54px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.nav-logo{font-weight:700;font-size:.95rem;letter-spacing:.03em;white-space:nowrap;}
+.nav-steps{display:flex;gap:3px;margin-left:auto;overflow-x:auto;}
+.nav-step{padding:5px 12px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);transition:all .2s;white-space:nowrap;}
+.nav-step.active,.nav-step:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.7);color:#fff;}
+.nav-step.done{border-color:#27ae60;color:#90EE90;}
+.pw{max-width:1060px;margin:0 auto;padding:24px 18px 60px;}
+.page{display:none;} .page.active{display:block;}
+.progress-bar{height:4px;background:#ddd;border-radius:3px;overflow:hidden;margin-bottom:18px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s;}
+.card{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 28px;margin-bottom:18px;}
+.card-title{font-size:1.05rem;font-weight:700;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.badge{background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;}
+.form-row.full{grid-template-columns:1fr;}
+.form-row.three{grid-template-columns:1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:.77rem;font-weight:700;color:#5a5240;text-transform:uppercase;letter-spacing:.04em;}
+.field input,.field select,.field textarea{font-family:'Sora',sans-serif;font-size:.88rem;color:var(--ink);background:#fff;border:1.5px solid var(--border);border-radius:5px;padding:8px 11px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,82,118,.1);}
+.field textarea{resize:vertical;min-height:72px;line-height:1.6;}
+.field select{cursor:pointer;}
+
+/* ===== SKILL SELECTOR ===== */
+.skill-selector-wrap{position:relative;}
+.skill-search{width:100%;font-family:'Sora',sans-serif;font-size:.9rem;padding:10px 14px;border:2px solid var(--border);border-radius:6px;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;padding-left:36px;}
+.skill-search:focus{border-color:var(--accent);}
+.skill-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:6px;max-height:320px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.12);}
+.skill-dropdown.open{display:block;}
+.skill-group-header{padding:8px 14px 4px;font-size:.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;background:#f5f5f2;border-bottom:1px solid #eee;position:sticky;top:0;}
+.skill-option{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0ede8;transition:background .15s;}
+.skill-option:hover,.skill-option.focused{background:#eef4fb;}
+.skill-option .skill-cod{font-weight:700;font-size:.82rem;color:var(--accent);font-family:monospace;margin-right:8px;}
+.skill-option .skill-verb{font-size:.78rem;background:#fde8e8;color:#c0392b;border-radius:10px;padding:1px 7px;margin-right:6px;font-weight:700;}
+.skill-option .skill-preview{font-size:.8rem;color:#555;display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.skill-option .bloom-badge{font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:10px;float:right;}
+.selected-skill-card{background:#f0f7ff;border:2px solid var(--accent);border-radius:8px;padding:14px 16px;margin-top:12px;}
+.selected-skill-card .sc-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.sc-cod{font-family:monospace;font-weight:700;font-size:.95rem;color:var(--accent);}
+.sc-comp{font-size:.8rem;color:#666;background:#e8edf2;padding:3px 10px;border-radius:10px;}
+.selected-skill-card .sc-texto{font-family:'Source Serif 4',serif;font-size:.92rem;line-height:1.75;color:var(--ink);}
+.verb-hl{background:#fde8e8;color:#c0392b;font-weight:700;border-radius:3px;padding:1px 4px;}
+.obj-hl{background:#e8f2fb;color:#1a5276;border-radius:3px;padding:1px 4px;}
+.purp-hl{background:#e8f8ee;color:#1e8449;border-radius:3px;padding:1px 4px;}
+
+/* ===== DISSECTION GRID ===== */
+.dissect-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;}
+.dc{background:#fff;border-radius:6px;padding:12px 14px;border-left:4px solid;}
+.dc.verb{border-color:#c0392b;} .dc.obj{border-color:#2980b9;} .dc.purp{border-color:#27ae60;}
+.dc h4{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+.dc.verb h4{color:#c0392b;} .dc.obj h4{color:#2980b9;} .dc.purp h4{color:#27ae60;}
+.dc p{font-size:.83rem;color:#444;line-height:1.5;}
+
+/* ===== BLOOM ===== */
+.bloom-badge-lg{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-weight:700;font-size:.88rem;margin-top:12px;}
+.bl1-bg{background:#e0f5f2;color:#16a085;border:2px solid #a2d9d1;}
+.bl2-bg{background:#f0eafa;color:#8e44ad;border:2px solid #d7bde2;}
+.bl3-bg{background:#e8f2fb;color:#2980b9;border:2px solid #aed6f1;}
+.bl4-bg{background:#e8f8ee;color:#27ae60;border:2px solid #a9dfbf;}
+.bl5-bg{background:#fef0e0;color:#e67e22;border:2px solid #f5cba7;}
+.bl6-bg{background:#fde8e8;color:#c0392b;border:2px solid #f5b7b1;}
+.bloom-mini{padding:2px 8px;border-radius:8px;font-size:.74rem;font-weight:700;}
+.b1{background:#e0f5f2;color:#16a085;} .b2{background:#f0eafa;color:#8e44ad;}
+.b3{background:#e8f2fb;color:#2980b9;} .b4{background:#e8f8ee;color:#27ae60;}
+.b5{background:#fef0e0;color:#e67e22;} .b6{background:#fde8e8;color:#c0392b;}
+
+/* ===== BLOOM PYRAMID ===== */
+.bloom-levels{display:flex;flex-direction:column;gap:4px;margin-top:6px;}
+.bloom-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.bloom-row:hover{transform:translateX(3px);}
+.bloom-row.selected{border-color:currentColor;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.bloom-row .br-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;color:#fff;flex-shrink:0;}
+.bloom-row .br-name{font-weight:700;font-size:.84rem;width:110px;flex-shrink:0;}
+.bloom-row .br-desc{font-size:.79rem;color:#666;flex:1;}
+.bloom-row .br-verbs{font-size:.72rem;font-style:italic;color:#999;margin-left:auto;text-align:right;max-width:180px;}
+.bl6-r{background:#fde8e8;color:#c0392b;} .bl6-r .br-num{background:#c0392b;}
+.bl5-r{background:#fef0e0;color:#e67e22;} .bl5-r .br-num{background:#e67e22;}
+.bl4-r{background:#e8f8ee;color:#27ae60;} .bl4-r .br-num{background:#27ae60;}
+.bl3-r{background:#e8f2fb;color:#2980b9;} .bl3-r .br-num{background:#2980b9;}
+.bl2-r{background:#f0eafa;color:#8e44ad;} .bl2-r .br-num{background:#8e44ad;}
+.bl1-r{background:#e0f5f2;color:#16a085;} .bl1-r .br-num{background:#16a085;}
+
+/* ===== AREA CHIPS ===== */
+.area-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}
+.area-chip{padding:9px 13px;border-radius:6px;border:2px solid var(--border);background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:7px;}
+.area-chip:hover{border-color:var(--accent);transform:translateY(-2px);}
+.area-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ===== METHODS ===== */
+.method-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px;}
+.method-chip{padding:9px 13px;border-radius:6px;border:2px solid var(--border);background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;text-align:center;transition:all .18s;color:#555;}
+.method-chip:hover{border-color:var(--accent);color:var(--accent);}
+.method-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ===== CRITERIA ===== */
+.criteria-list{display:flex;flex-direction:column;gap:7px;}
+.criteria-item{display:flex;gap:9px;align-items:center;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:9px 12px;}
+.criteria-item input{flex:1;border:none;border-bottom:1px dashed var(--border);outline:none;font-family:'Sora',sans-serif;font-size:.85rem;padding:2px 5px;background:transparent;}
+.criteria-item input:focus{border-color:var(--accent);}
+.del-btn{background:none;border:none;color:#c0392b;cursor:pointer;font-size:1rem;padding:0 3px;flex-shrink:0;}
+.add-btn{display:flex;align-items:center;gap:6px;background:none;border:2px dashed var(--border);border-radius:6px;padding:8px 14px;color:#888;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;width:100%;justify-content:center;margin-top:7px;transition:all .2s;}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ===== PREVIEW TABLE ===== */
+.prev-table{width:100%;border-collapse:collapse;font-family:'Source Serif 4',serif;font-size:.86rem;}
+.prev-table td{border:1px solid #aaa;padding:7px 11px;vertical-align:top;}
+.prev-table .lbl{background:#f0ede3;font-weight:700;width:28%;font-size:.8rem;}
+.prev-table .hd{background:var(--accent);color:#fff;font-weight:700;text-align:center;font-size:.88rem;padding:9px;}
+
+/* ===== CHECKLIST ===== */
+.checklist{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
+.chk-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:#fff;font-size:.82rem;}
+.chk-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent2);cursor:default;flex-shrink:0;}
+.chk-tag{font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:8px;background:#e8f8ee;color:#196f3d;flex-shrink:0;margin-left:auto;}
+.chk-ok{border-color:#a9dfbf;background:#f0fff5;}
+.chk-warn{border-color:#f9c74f;background:#fffbf0;}
+
+/* ===== AI BOX ===== */
+.ai-box{background:linear-gradient(135deg,#eef2ff,#f0f9ff);border:1.5px solid #c5cae9;border-radius:8px;padding:14px 18px;margin:12px 0;}
+.ai-box h4{color:#3949ab;font-size:.85rem;font-weight:700;margin-bottom:6px;}
+.ai-result{font-size:.85rem;color:#333;line-height:1.7;margin-top:9px;}
+.ai-result.loading{color:#888;font-style:italic;}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid #c5cae9;border-top-color:#3949ab;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== TABS ===== */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:18px;}
+.tab{padding:9px 16px;font-size:.82rem;font-weight:600;cursor:pointer;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;}
+.tab:hover{color:var(--accent);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;} .tab-panel.active{display:block;}
+
+/* ===== BUTTONS ===== */
+.btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+.btn{font-family:'Sora',sans-serif;font-weight:600;font-size:.88rem;padding:10px 24px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .18s;}
+.btn-sec{background:#fff;border-color:var(--border);color:#666;}
+.btn-sec:hover{border-color:#888;}
+.btn-pri{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 3px 10px rgba(26,82,118,.22);}
+.btn-pri:hover{background:#154360;transform:translateY(-1px);}
+.btn-suc{background:var(--accent2);color:#fff;border-color:var(--accent2);box-shadow:0 3px 10px rgba(30,132,73,.22);}
+.btn-suc:hover{background:#196f3d;transform:translateY(-1px);}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+.status-msg{text-align:center;font-size:.88rem;font-style:italic;min-height:20px;margin-top:9px;color:var(--accent);}
+.status-msg.err{color:var(--accent3);}
+
+/* ===== ALERT BOX ===== */
+.alert-info{background:#e8f4fd;border:1px solid #aed6f1;border-radius:6px;padding:10px 14px;font-size:.82rem;color:#1a5276;margin-bottom:12px;}
+.alert-warn{background:#fef9e7;border:1px solid #f9e79f;border-radius:6px;padding:10px 14px;font-size:.82rem;color:#7d6608;margin-bottom:12px;}
+
+@media(max-width:700px){
+  .form-row,.form-row.three,.dissect-grid{grid-template-columns:1fr;}
+  .card{padding:16px 14px;}
+  .bloom-row .br-verbs{display:none;}
+  .nav-steps{gap:2px;}
+  .nav-step{padding:4px 9px;font-size:.7rem;}
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">📚 Planejamento BNCC — CEJA</div>
+  <div class="nav-steps" id="navSteps">
+    <div class="nav-step active" onclick="goTo(0)">1. Identificação</div>
+    <div class="nav-step" onclick="goTo(1)">2. Habilidade</div>
+    <div class="nav-step" onclick="goTo(2)">3. Conteúdo</div>
+    <div class="nav-step" onclick="goTo(3)">4. Metodologia</div>
+    <div class="nav-step" onclick="goTo(4)">5. Avaliação</div>
+    <div class="nav-step" onclick="goTo(5)">6. Revisão</div>
+  <button onclick="document.getElementById('geminiConfigPanel').style.display='flex'" style="background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem;white-space:nowrap;margin-left:8px;">⚙️ Configurar IA</button>
+  </div>
+</nav>
+
+<!-- ===== GEMINI KEY CONFIG ===== -->
+<div id="geminiConfigPanel" style="background:#fff3cd;border:1px solid #ffc107;padding:8px 18px;font-size:.8rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+  <span>🔑 <strong>IA Gemini:</strong></span>
+  <input type="password" id="geminiKeyInput" placeholder="Cole sua chave da API Gemini aqui (AIza...)" style="flex:1;min-width:260px;padding:5px 9px;border:1px solid #ccc;border-radius:4px;font-size:.8rem;" oninput="window.GEMINI_KEY=this.value;">
+  <button onclick="salvarChaveGemini()" style="padding:5px 14px;background:#1a5276;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.8rem;">✅ Salvar</button>
+  <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:.75rem;color:#555;">Obter chave gratuita →</a>
+  <button onclick="document.getElementById('geminiConfigPanel').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:1rem;">✕</button>
+</div>
+<div class="pw">
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:16%"></div></div>
+
+<!-- ===== PAGE 0: IDENTIFICAÇÃO ===== -->
+<div class="page active" id="page0">
+  <div class="card">
+    <div class="card-title"><span class="badge">1</span> Identificação do Plano</div>
+    <div class="form-row">
+      <div class="field"><label>Nome da Escola</label><input type="text" id="escola" value="CEJA DE LAGUNA"></div>
+      <div class="field"><label>Nome do Professor(a)</label><input type="text" id="professor" placeholder="Nome completo"></div>
+    </div>
+    <div class="form-row three">
+      <div class="field"><label>Turma / Etapa</label><input type="text" id="turma" placeholder="Ex: 1ª série EM / EJA 3ª Etapa"></div>
+      <div class="field"><label>Data de Início</label><input type="date" id="dataInicio"></div>
+      <div class="field"><label>Carga Horária (aulas)</label><input type="text" id="cargaHoraria" placeholder="Ex: 4 aulas — 2 por semana"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Tema Gerador</label><input type="text" id="temaGerador" placeholder="Tema central da(s) habilidade(s)"></div>
+      <div class="field"><label>Contexto da Turma</label><input type="text" id="contexto" placeholder="Breve perfil dos estudantes"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge">📌</span> Área do Conhecimento</div>
+    <div class="area-grid" id="areaGrid">
+      <div class="area-chip" onclick="toggleArea(this,'Linguagens e suas Tecnologias')"><span>📖</span>Linguagens e suas Tecnologias</div>
+      <div class="area-chip" onclick="toggleArea(this,'Matemática e suas Tecnologias')"><span>🔢</span>Matemática e suas Tecnologias</div>
+      <div class="area-chip" onclick="toggleArea(this,'Ciências da Natureza e suas Tecnologias')"><span>🔬</span>Ciências da Natureza e suas Tecnologias</div>
+      <div class="area-chip" onclick="toggleArea(this,'Ciências Humanas e Sociais Aplicadas')"><span>🌍</span>Ciências Humanas e Sociais Aplicadas</div>
+      <div class="area-chip" onclick="toggleArea(this,'Formação Técnica e Profissional')"><span>⚙️</span>Formação Técnica e Profissional</div>
+    </div>
+    <div class="field" style="margin-top:12px;"><label>Componente(s) Curricular(es)</label><input type="text" id="componente" placeholder="Ex: Língua Portuguesa, Biologia, Física"></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-pri" onclick="goTo(1)">Próximo: Habilidade →</button></div>
+</div>
+
+<!-- ===== PAGE 1: HABILIDADE ===== -->
+<div class="page" id="page1">
+  <div class="card">
+    <div class="card-title"><span class="badge">2</span> Seleção da Habilidade BNCC</div>
+    <div class="alert-info">🔎 Pesquise pelo <strong>código</strong> (ex: EM13CNT101) ou pelo <strong>verbo/tema</strong> da habilidade. A dissecção e o nível de Bloom serão carregados automaticamente.</div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label>Buscar Habilidade</label>
+      <div class="skill-selector-wrap">
+        <input type="text" class="skill-search" id="skillSearch" placeholder="Buscar por código, verbo ou tema... (ex: analisar, EM13CHS, linguagens)" oninput="filterSkills()" onfocus="openDropdown()" autocomplete="off">
+        <div class="skill-dropdown" id="skillDropdown"></div>
+      </div>
+    </div>
+
+    <div id="selectedSkillWrap" style="display:none;">
+      <div class="selected-skill-card">
+        <div class="sc-header">
+          <span class="sc-cod" id="sc-cod"></span>
+          <span class="sc-comp" id="sc-comp"></span>
+          <button onclick="clearSkill()" style="margin-left:auto;background:none;border:none;color:#c0392b;cursor:pointer;font-size:.8rem;font-weight:600;">✕ Trocar</button>
+        </div>
+        <div class="sc-texto" id="sc-texto"></div>
+        <div id="sc-bloom-badge"></div>
+      </div>
+
+      <div class="dissect-grid">
+        <div class="dc verb"><h4>🎯 O que precisa fazer (verbo)</h4><p id="dc-verb">—</p></div>
+        <div class="dc obj"><h4>📚 Com o quê / Sobre o quê</h4><p id="dc-obj">—</p></div>
+        <div class="dc purp"><h4>💡 Para quê (finalidade)</h4><p id="dc-purp">—</p></div>
+      </div>
+    </div>
+
+    <div id="noSkillWrap" style="margin-top:10px;">
+      <div class="alert-warn">⚠️ Nenhuma habilidade selecionada. Se a habilidade que você precisa não estiver na lista, pode digitar manualmente abaixo.</div>
+      <div class="form-row full" style="margin-top:10px;">
+        <div class="field"><label>Código da habilidade (manual)</label><input type="text" id="codManual" placeholder="Ex: EM13CNT101" oninput="updateManualHab()"></div>
+      </div>
+      <div class="form-row full">
+        <div class="field"><label>Texto completo da habilidade (manual)</label><textarea id="habManual" rows="4" placeholder="Cole aqui o texto completo da habilidade conforme a BNCC/CBTC..." oninput="updateManualHab()"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="badge">🎓</span> Nível Cognitivo — Taxonomia de Bloom</div>
+    <p style="font-size:.82rem;color:#666;margin-bottom:12px;">A seleção da habilidade define automaticamente o nível. Confirme ou ajuste se necessário. <strong style="color:#c0392b;">Nunca troque o verbo da habilidade</strong> — isso muda a própria habilidade.</p>
+    <div class="bloom-levels">
+      <div class="bloom-row bl6-r" onclick="selectBloom(6)" id="brow6"><div class="br-num">6</div><div class="br-name">CRIAR</div><div class="br-desc">Combinar partes para formular algo novo</div><div class="br-verbs">criar, elaborar, planejar, produzir, construir, propor</div></div>
+      <div class="bloom-row bl5-r" onclick="selectBloom(5)" id="brow5"><div class="br-num">5</div><div class="br-name">AVALIAR</div><div class="br-desc">Julgar o valor de informações e ideias</div><div class="br-verbs">avaliar, julgar, justificar, defender, argumentar, criticar</div></div>
+      <div class="bloom-row bl4-r" onclick="selectBloom(4)" id="brow4"><div class="br-num">4</div><div class="br-name">ANALISAR</div><div class="br-desc">Segmentar informações em componentes e relações</div><div class="br-verbs">analisar, comparar, diferenciar, examinar, investigar</div></div>
+      <div class="bloom-row bl3-r" onclick="selectBloom(3)" id="brow3"><div class="br-num">3</div><div class="br-name">APLICAR</div><div class="br-desc">Aplicar fatos, conceitos, regras e ideias</div><div class="br-verbs">aplicar, calcular, resolver, demonstrar, usar, executar</div></div>
+      <div class="bloom-row bl2-r" onclick="selectBloom(2)" id="brow2"><div class="br-num">2</div><div class="br-name">COMPREENDER</div><div class="br-desc">Entender o que conceitos significam e como se relacionam</div><div class="br-verbs">explicar, resumir, classificar, interpretar, relacionar</div></div>
+      <div class="bloom-row bl1-r" onclick="selectBloom(1)" id="brow1"><div class="br-num">1</div><div class="br-name">LEMBRAR</div><div class="br-desc">Reconhecer e rememorar fatos e conceitos básicos</div><div class="br-verbs">listar, definir, nomear, reconhecer, recordar, enumerar</div></div>
+    </div>
+    <input type="hidden" id="bloomSel" value="">
+  </div>
+
+  <div class="ai-box">
+    <h4>⚡ Análise aprofundada da habilidade com IA</h4>
+    <p style="font-size:.8rem;color:#555;">A IA analisa a habilidade selecionada, confirma o nível de Bloom e alerta sobre erros comuns no planejamento.</p>
+    <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+      <button class="btn btn-pri" onclick="analisarIA()" id="btnIA">🤖 Analisar com IA</button>
+    </div>
+    <div class="ai-result" id="iaResult"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-sec" onclick="goTo(0)">← Voltar</button>
+    <button class="btn btn-pri" onclick="goTo(2)">Próximo: Conteúdo →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 2: CONTEÚDO ===== -->
+<div class="page" id="page2">
+  <div class="card">
+    <div class="card-title"><span class="badge">3</span> Objeto de Conhecimento / Estudo</div>
+    <div class="alert-info">💡 O conteúdo é o <strong>meio</strong> para desenvolver a habilidade — não o fim. Escolha conteúdos que permitam ao aluno exercer exatamente a ação cognitiva exigida pelo verbo.</div>
+    <div class="form-row full"><div class="field"><label>Conteúdos / Objetos de Conhecimento</label><textarea id="conteudo" rows="5" placeholder="Liste os conteúdos que serão trabalhados para desenvolver a habilidade selecionada."></textarea></div></div>
+    <div class="form-row full"><div class="field"><label>Conexões Interdisciplinares (opcional)</label><textarea id="interdisc" rows="3" placeholder="Relacione com outras áreas ou componentes curriculares, se houver."></textarea></div></div>
+  </div>
+  <div class="ai-box">
+    <h4>⚡ Sugestão de conteúdos alinhados à habilidade</h4>
+    <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+      <button class="btn btn-pri" onclick="sugerirConteudo()" id="btnCont">🤖 Sugerir conteúdos</button>
+    </div>
+    <div class="ai-result" id="iaCont"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-sec" onclick="goTo(1)">← Voltar</button>
+    <button class="btn btn-pri" onclick="goTo(3)">Próximo: Metodologia →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 3: METODOLOGIA ===== -->
+<div class="page" id="page3">
+  <div class="card">
+    <div class="card-title"><span class="badge">4</span> Caminho Metodológico</div>
+    <div class="alert-info">📌 A metodologia deve propor atividades que engajem o aluno no <strong>mesmo nível cognitivo</strong> do verbo da habilidade. Se a habilidade pede "analisar", a atividade deve de fato exigir análise.</div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:.78rem;font-weight:700;color:#5a5240;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Estratégias / Metodologias Ativas</div>
+      <div class="method-grid" id="methodGrid">
+        <div class="method-chip" onclick="toggleMethod(this)">Aula expositiva dialogada</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Leitura e análise de textos</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Resolução de problemas</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Aprendizagem por projetos</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Sala de aula invertida</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Estudos de caso</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Debate e argumentação</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Trabalho colaborativo</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Experimentação prática</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Produção textual</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Uso de tecnologias digitais</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Mapa conceitual</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Seminário / Apresentação</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Pesquisa orientada</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Gamificação</div>
+        <div class="method-chip" onclick="toggleMethod(this)">Júri simulado</div>
+      </div>
+    </div>
+    <div class="form-row full"><div class="field"><label>Descrição do caminho metodológico</label><textarea id="metodologia" rows="7" placeholder="Descreva as etapas da aula: momento inicial (ativação do conhecimento prévio), desenvolvimento das atividades e sistematização."></textarea></div></div>
+    <div class="form-row full"><div class="field"><label>Recursos Didáticos</label><input type="text" id="recursos" placeholder="Ex: Quadro, datashow, smartphones, textos impressos..."></div></div>
+  </div>
+  <div class="ai-box">
+    <h4>⚡ Sugerir roteiro metodológico alinhado ao nível cognitivo</h4>
+    <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+      <button class="btn btn-pri" onclick="sugerirMet()" id="btnMet">🤖 Sugerir metodologia</button>
+    </div>
+    <div class="ai-result" id="iaMet"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-sec" onclick="goTo(2)">← Voltar</button>
+    <button class="btn btn-pri" onclick="goTo(4)">Próximo: Avaliação →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 4: AVALIAÇÃO ===== -->
+<div class="page" id="page4">
+  <div class="card">
+    <div class="card-title"><span class="badge">5</span> Critérios de Avaliação</div>
+    <div class="alert-warn">⚠️ <strong>Critérios vazios NÃO são aceitos pela SED.</strong> Evite: "progressão do pensamento crítico", "aplicação prática e conexões". Use verbos observáveis derivados da própria habilidade.</div>
+    <div class="criteria-list" id="criteriaList">
+      <div class="criteria-item"><input type="text" placeholder="Ex: Analisa situações do cotidiano envolvendo fenômenos elétricos"><button class="del-btn" onclick="removeCrit(this)">✕</button></div>
+    </div>
+    <button class="add-btn" onclick="addCrit()">+ Adicionar critério</button>
+    <div class="ai-box" style="margin-top:16px;">
+      <h4>⚡ Sugerir critérios baseados na habilidade</h4>
+      <div class="btn-row" style="margin-top:8px;justify-content:flex-start;">
+        <button class="btn btn-pri" onclick="sugerirCrit()" id="btnCrit">🤖 Sugerir critérios</button>
+      </div>
+      <div class="ai-result" id="iaCrit"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge">📝</span> Instrumentos de Avaliação</div>
+    <div class="method-grid" id="instrGrid">
+      <div class="method-chip" onclick="toggleInstr(this)">Resolução de situações-problema</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Produção textual escrita</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Apresentação oral</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Atividade de análise</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Mapa conceitual</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Portfólio</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Autoavaliação</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Prova dissertativa</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Rubrica</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Observação sistemática</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Relatório de atividade</div>
+      <div class="method-chip" onclick="toggleInstr(this)">Debate avaliativo</div>
+    </div>
+    <div class="form-row full" style="margin-top:12px;"><div class="field"><label>Complemento / Outros instrumentos</label><textarea id="instrCompl" rows="3" placeholder="Como os instrumentos serão usados para verificar o desenvolvimento da habilidade..."></textarea></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="badge">📚</span> Referências</div>
+    <div class="form-row full"><div class="field"><textarea id="referencias" rows="4" placeholder="Referências bibliográficas, sites e materiais utilizados..."></textarea></div></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-sec" onclick="goTo(3)">← Voltar</button>
+    <button class="btn btn-pri" onclick="goTo(5)">Revisar Plano →</button>
+  </div>
+</div>
+
+<!-- ===== PAGE 5: REVISÃO ===== -->
+<div class="page" id="page5">
+  <div class="card">
+    <div class="card-title"><span class="badge">6</span> Revisão e Exportação</div>
+    <div class="tabs">
+      <div class="tab active" onclick="openTab('tabPrev')">👁 Pré-visualização</div>
+      <div class="tab" onclick="openTab('tabChk')">✅ Check-list SED</div>
+    </div>
+    <div class="tab-panel active" id="tabPrev">
+      <table class="prev-table" id="prevTable">
+        <tr><td colspan="2" class="hd">PLANO DE AULA</td></tr>
+        <tr><td class="lbl">Escola</td><td id="p_escola"></td></tr>
+        <tr><td class="lbl">Professor(a)</td><td id="p_prof"></td></tr>
+        <tr><td class="lbl">Área / Componente</td><td id="p_area"></td></tr>
+        <tr><td class="lbl">Tema Gerador</td><td id="p_tema"></td></tr>
+        <tr><td class="lbl">Turma / Etapa</td><td id="p_turma"></td></tr>
+        <tr><td class="lbl">Habilidade(s) — BNCC</td><td id="p_hab" style="font-style:italic;font-family:'Source Serif 4',serif;"></td></tr>
+        <tr><td class="lbl">Nível Cognitivo (Bloom)</td><td id="p_bloom"></td></tr>
+        <tr><td class="lbl">Objeto de Conhecimento</td><td id="p_cont"></td></tr>
+        <tr><td class="lbl">Caminho Metodológico</td><td id="p_met"></td></tr>
+        <tr><td class="lbl">Critérios de Avaliação</td><td id="p_crit"></td></tr>
+        <tr><td class="lbl">Instrumentos de Avaliação</td><td id="p_instr"></td></tr>
+        <tr><td class="lbl">Carga Horária</td><td id="p_carga"></td></tr>
+        <tr><td class="lbl">Referências</td><td id="p_ref"></td></tr>
+      </table>
+    </div>
+    <div class="tab-panel" id="tabChk">
+      <div class="checklist" id="checklistSED"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-sec" onclick="goTo(4)">← Voltar</button>
+    <button class="btn btn-sec" onclick="updatePreview()">🔄 Atualizar</button>
+    <button class="btn btn-suc" onclick="exportDocx()" id="expBtn">⬇ Exportar .docx</button>
+  </div>
+  <div class="status-msg" id="st"></div>
+</div>
+
+</div><!-- end pw -->
+<script>
+// ===== HABILIDADES DB (104 habilidades BNCC EM13) =====
+var HABILIDADES_DB = [{"cod":"EM13LGG101","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Compreender e analisar","objeto":"processos de produção e circulação de discursos nas diferentes linguagens","finalidade":"fazer escolhas fundamentadas em função de interesses pessoais e coletivos","bloom":4,"texto":"Compreender e analisar processos de produção e circulação de discursos, nas diferentes linguagens, para fazer escolhas fundamentadas em função de interesses pessoais e coletivos."},{"cod":"EM13LGG102","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Analisar","objeto":"visões de mundo, conflitos de interesse, preconceitos e ideologias nos discursos veiculados nas diferentes mídias","finalidade":"ampliar possibilidades de explicação, interpretação e intervenção crítica da realidade","bloom":4,"texto":"Analisar visões de mundo, conflitos de interesse, preconceitos e ideologias presentes nos discursos veiculados nas diferentes mídias, ampliando suas possibilidades de explicação, interpretação e intervenção crítica da realidade."},{"cod":"EM13LGG103","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Analisar","objeto":"o funcionamento das linguagens","finalidade":"interpretar e produzir criticamente discursos em textos de diversas semioses","bloom":4,"texto":"Analisar o funcionamento das linguagens, para interpretar e produzir criticamente discursos em textos de diversas semioses (visuais, verbais, sonoras, gestuais)."},{"cod":"EM13LGG104","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Utilizar","objeto":"as diferentes linguagens levando em conta seus funcionamentos","finalidade":"compreensão e produção de textos e discursos em diversos campos de atuação social","bloom":3,"texto":"Utilizar as diferentes linguagens, levando em conta seus funcionamentos, para a compreensão e produção de textos e discursos em diversos campos de atuação social."},{"cod":"EM13LGG201","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Utilizar","objeto":"as diversas linguagens em diferentes contextos","finalidade":"valorizar as linguagens como fenômeno social, cultural, histórico","bloom":3,"texto":"Utilizar as diversas linguagens (artísticas, corporais e verbais) em diferentes contextos, valorizando-as como fenômeno social, cultural, histórico, variável, heterogêneo e sensível aos contextos de uso."},{"cod":"EM13LGG202","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Analisar","objeto":"interesses, relações de poder e perspectivas de mundo nos discursos das diversas práticas de linguagem","finalidade":"compreender criticamente o modo como circulam, constituem-se e reproduzem significação e ideologias","bloom":4,"texto":"Analisar interesses, relações de poder e perspectivas de mundo nos discursos das diversas práticas de linguagem (artísticas, corporais e verbais), compreendendo criticamente o modo como circulam, constituem-se e (re)produzem significação e ideologias."},{"cod":"EM13LGG203","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Analisar","objeto":"os diálogos e os processos de disputa por legitimidade nas práticas de linguagem","finalidade":"compreender as relações de poder presentes nas produções artísticas, corporais e verbais","bloom":4,"texto":"Analisar os diálogos e os processos de disputa por legitimidade nas práticas de linguagem e em suas produções (artísticas, corporais e verbais)."},{"cod":"EM13LGG204","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Dialogar e produzir","objeto":"entendimento mútuo nas diversas linguagens","finalidade":"promover o interesse comum pautado em princípios e valores de equidade e democracia","bloom":5,"texto":"Dialogar e produzir entendimento mútuo, nas diversas linguagens (artísticas, corporais e verbais), com vistas ao interesse comum pautado em princípios e valores de equidade assentados na democracia e nos Direitos Humanos."},{"cod":"EM13LGG301","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Participar","objeto":"processos de produção individual e colaborativa em diferentes linguagens","finalidade":"produzir sentidos em diferentes contextos","bloom":3,"texto":"Participar de processos de produção individual e colaborativa em diferentes linguagens (artísticas, corporais e verbais), levando em conta suas formas e seus funcionamentos, para produzir sentidos em diferentes contextos."},{"cod":"EM13LGG302","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Posicionar-se criticamente","objeto":"diversas visões de mundo presentes nos discursos em diferentes linguagens","finalidade":"analisar seus contextos de produção e de circulação","bloom":5,"texto":"Posicionar-se criticamente diante de diversas visões de mundo presentes nos discursos em diferentes linguagens, levando em conta seus contextos de produção e de circulação."},{"cod":"EM13LGG303","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Debater","objeto":"questões polêmicas de relevância social, analisando diferentes argumentos e opiniões","finalidade":"formular, negociar e sustentar posições frente a perspectivas distintas","bloom":5,"texto":"Debater questões polêmicas de relevância social, analisando diferentes argumentos e opiniões, para formular, negociar e sustentar posições, frente à análise de perspectivas distintas."},{"cod":"EM13LGG304","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Formular propostas e intervir","objeto":"questões que levem em conta o bem comum e os Direitos Humanos","finalidade":"tomar decisões responsáveis em âmbito local, regional e global","bloom":6,"texto":"Formular propostas, intervir e tomar decisões que levem em conta o bem comum e os Direitos Humanos, a consciência socioambiental e o consumo responsável em âmbito local, regional e global."},{"cod":"EM13LGG305","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Mapear e criar","objeto":"possibilidades de atuação social, política, artística e cultural por meio de práticas de linguagem","finalidade":"enfrentar desafios contemporâneos de maneira crítica, criativa e ética","bloom":6,"texto":"Mapear e criar, por meio de práticas de linguagem, possibilidades de atuação social, política, artística e cultural para enfrentar desafios contemporâneos, discutindo princípios e objetivos dessa atuação de maneira crítica, criativa, solidária e ética."},{"cod":"EM13LGG401","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Analisar criticamente","objeto":"textos para compreender e caracterizar as línguas como fenômeno histórico, social e cultural","finalidade":"desenvolver consciência crítica sobre o funcionamento das línguas","bloom":4,"texto":"Analisar criticamente textos de modo a compreender e caracterizar as línguas como fenômeno (geo)político, histórico, social, cultural, variável, heterogêneo e sensível aos contextos de uso."},{"cod":"EM13LGG402","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Empregar","objeto":"a variedade e o estilo de língua adequados à situação comunicativa e ao gênero do discurso","finalidade":"garantir comunicação eficaz respeitando a diversidade linguística","bloom":3,"texto":"Empregar, nas interações sociais, a variedade e o estilo de língua adequados à situação comunicativa, ao(s) interlocutor(es) e ao gênero do discurso, respeitando os usos das línguas e sem preconceito linguístico."},{"cod":"EM13LGG403","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Fazer escolhas e usufruir","objeto":"manifestações artísticas e produções estéticas","finalidade":"ampliar experiências e expressar-se criativamente","bloom":3,"texto":"Fazer escolhas e usufruir do contato com manifestações artísticas e produções estéticas como forma de explorar o próprio repertório e ampliar as suas possibilidades expressivas."},{"cod":"EM13LGG501","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Selecionar e utilizar","objeto":"movimentos e práticas corporais como recurso para resolver desafios e situações de convívio","finalidade":"produzir projetos pessoais e coletivos de lazer, bem-estar e saúde","bloom":3,"texto":"Selecionar e utilizar movimentos e práticas corporais como recurso para resolver desafios e situações de convívio, de acordo com as particularidades do contexto, além de produzir projetos pessoais e coletivos de lazer, bem-estar e saúde."},{"cod":"EM13LGG502","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Analisar e aplicar","objeto":"critérios de segurança e consumo responsável nas práticas corporais","finalidade":"promover bem-estar e prevenção de danos à saúde","bloom":4,"texto":"Analisar e aplicar critérios de segurança e consumo responsável nas práticas corporais, de forma a promover o bem-estar e prevenir danos à saúde."},{"cod":"EM13LGG601","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Apropriar-se","objeto":"do patrimônio artístico de diferentes tempos e lugares","finalidade":"ampliar e diversificar possibilidades de criação e fruição artísticas","bloom":3,"texto":"Apropriar-se do patrimônio artístico de diferentes tempos e lugares, compreendendo a sua diversidade, bem como os processos de legitimação das manifestações artísticas na sociedade."},{"cod":"EM13LGG602","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Fruir e analisar","objeto":"produções artísticas e produtos midiáticos","finalidade":"ampliar possibilidades de produção e dialogar com diferentes tradições artísticas","bloom":4,"texto":"Fruir e analisar produções artísticas e dos produtos midiáticos, de modo a desenvolver olhar crítico e sensível, ampliando as possibilidades de produção e de criação."},{"cod":"EM13LGG603","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Expressar-se e atuar","objeto":"em processos de criação autorais em diferentes linguagens artísticas","finalidade":"dialogar com as estéticas e os temas das produções de diferentes épocas","bloom":6,"texto":"Expressar-se e atuar em processos de criação autorais, individuais e coletivos, em diferentes linguagens artísticas (visuais, cênicas, musicais e audiovisuais), fazendo uso de tecnologias digitais."},{"cod":"EM13LGG701","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Explorar e analisar","objeto":"diferentes formas de expressão cultural presentes nos contextos locais e globais","finalidade":"fazer escolhas e construir experiências culturais vinculadas ao projeto de vida","bloom":4,"texto":"Explorar e analisar diferentes formas de expressão cultural presentes nos contextos locais e globais, fazendo escolhas e construindo experiências culturais vinculadas ao projeto de vida."},{"cod":"EM13LGG702","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Interpretar e compor","objeto":"textos em múltiplas linguagens e mídias","finalidade":"desenvolver projetos de vida e comunicar-se em diferentes contextos","bloom":4,"texto":"Interpretar e compor textos em múltiplas linguagens e mídias, de modo a produzir sentidos e comunicar-se em diferentes contextos, favorecendo o desenvolvimento de projetos de vida."},{"cod":"EM13LGG703","area":"LGG","comp":"Linguagens e suas Tecnologias","verbo":"Utilizar","objeto":"diferentes linguagens e tecnologias digitais para produzir e compartilhar informações","finalidade":"fomentar a participação social e a colaboração com diferentes grupos","bloom":3,"texto":"Utilizar diferentes linguagens e tecnologias digitais para produzir e compartilhar informações, de modo a fomentar a participação social e a colaboração com diferentes grupos e comunidades."},{"cod":"EM13LP01","area":"LGG","comp":"Língua Portuguesa","verbo":"Relacionar","objeto":"o texto, na produção e na leitura/escuta, com suas condições de produção e contexto sócio-histórico","finalidade":"reconhecer restrições e escolhas linguísticas e os efeitos de sentido gerados","bloom":4,"texto":"Relacionar o texto, tanto na produção como na leitura/escuta, com suas condições de produção e seu contexto sócio-histórico de circulação, reconhecendo as restrições que essas condições impõem ao texto, suas escolhas linguísticas e os efeitos de sentido gerados."},{"cod":"EM13LP02","area":"LGG","comp":"Língua Portuguesa","verbo":"Estabelecer relações","objeto":"entre as partes do texto identificando substituições lexicais, retomadas pronominais e sequências textuais","finalidade":"compreender a organização e a progressão temática do texto","bloom":4,"texto":"Estabelecer relações entre as partes do texto, identificando substituições lexicais, retomadas pronominais, relações semânticas e sequências textuais (narrativa, descritiva, argumentativa, expositiva, injuntiva e dialogal)."},{"cod":"EM13LP03","area":"LGG","comp":"Língua Portuguesa","verbo":"Analisar e avaliar","objeto":"a adequação das escolhas linguísticas morfossintáticas e estilísticas a diferentes situações comunicativas","finalidade":"identificar e corrigir inadequações e ampliar o repertório de recursos linguísticos","bloom":5,"texto":"Analisar e avaliar a adequação das escolhas linguísticas de ordem morfossintática e estilística a diferentes situações comunicativas (formais e informais), identificando e corrigindo possíveis inadequações."},{"cod":"EM13LP04","area":"LGG","comp":"Língua Portuguesa","verbo":"Compreender","objeto":"a língua como fenômeno cultural, histórico, social, variável, heterogêneo e sensível aos contextos","finalidade":"reconhecê-la como meio de construção de identidades","bloom":2,"texto":"Compreender a língua como fenômeno cultural, histórico, social, variável, heterogêneo e sensível aos contextos de uso, reconhecendo-a como meio de construção de identidades de seus usuários e da comunidade a que pertencem."},{"cod":"EM13LP05","area":"LGG","comp":"Língua Portuguesa","verbo":"Analisar criticamente","objeto":"textos escritos em norma culta e em variedades linguísticas diversas","finalidade":"expandir possibilidades comunicativas e desenvolver postura ética diante da diversidade","bloom":4,"texto":"Analisar criticamente textos escritos em norma culta e em variedades linguísticas diversas, reconhecendo a função das variedades linguísticas como expressão cultural e forma de resistência."},{"cod":"EM13LP06","area":"LGG","comp":"Língua Portuguesa","verbo":"Analisar e comparar","objeto":"criticamente conteúdos de diferentes mídias e tecnologias","finalidade":"apoiar escolhas pessoais e desenvolver capacidade crítico-reflexiva","bloom":4,"texto":"Analisar e comparar crítica e contextualmente textos verbais e não verbais de diferentes mídias, identificando ideologias, narrativas e discursos que os permeiam."},{"cod":"EM13LP07","area":"LGG","comp":"Língua Portuguesa","verbo":"Produzir textos","objeto":"orais, escritos e multissemióticos em diferentes gêneros textuais","finalidade":"participar de práticas de linguagem em diferentes campos de atuação social","bloom":6,"texto":"Produzir textos orais, escritos e multissemióticos em diferentes gêneros textuais (debates, seminários, notícias, resenhas, artigos, poemas etc.), com autonomia, fluência e qualidade formal."},{"cod":"EM13LP08","area":"LGG","comp":"Língua Portuguesa","verbo":"Analisar","objeto":"efeitos de sentido de escolhas de imagens, elementos gráficos e verbo-visuais em produções multissemióticas","finalidade":"elaborar produções com adequação ao contexto e ao objetivo comunicativo","bloom":4,"texto":"Analisar efeitos de sentido decorrentes de escolhas de imagens estáticas, sequenciadas e em movimento, elementos gráficos e de composição visual em produções multissemióticas."},{"cod":"EM13LP09","area":"LGG","comp":"Língua Portuguesa","verbo":"Comparar e analisar","objeto":"diferentes gêneros jornalístico-midiáticos em função de seus contextos de produção","finalidade":"engajar-se em práticas de consumo crítico de informação e participação cidadã","bloom":4,"texto":"Comparar e analisar diferentes gêneros jornalístico-midiáticos em função de seus contextos de produção, sua organização e seus papéis na formação de opinião."},{"cod":"EM13LP10","area":"LGG","comp":"Língua Portuguesa","verbo":"Analisar e produzir","objeto":"textos de caráter argumentativo em diferentes gêneros","finalidade":"defender pontos de vista com sustentação lógica e ética","bloom":5,"texto":"Analisar e produzir textos de caráter argumentativo (editorial, artigo de opinião, carta ao leitor, resenha crítica etc.), reconhecendo sua organização e as estratégias argumentativas utilizadas."},{"cod":"EM13MAT101","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Interpretar","objeto":"situações econômicas, sociais e das ciências da natureza que utilizam variação de grandezas","finalidade":"compreender fenômenos como crescimento de populações e variação econômica","bloom":2,"texto":"Interpretar situações econômicas, sociais e das ciências da natureza que utilizam variação de grandezas, pela análise dos gráficos das funções representadas e das taxas de variação, com ou sem apoio de tecnologias digitais."},{"cod":"EM13MAT102","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Analisar","objeto":"tabelas, gráficos e amostras de pesquisas estatísticas apresentadas por diferentes meios","finalidade":"identificar inadequações que possam induzir erros de interpretação","bloom":4,"texto":"Analisar tabelas, gráficos e amostras de pesquisas estatísticas apresentadas em relatórios divulgados por diferentes meios de comunicação, identificando, quando for o caso, inadequações na representação dos dados que possam induzir a erros de interpretação."},{"cod":"EM13MAT103","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Analisar e estabelecer relações","objeto":"entre variáveis de funções polinomiais de 1º grau","finalidade":"resolver problemas envolvendo fenômenos do mundo real","bloom":4,"texto":"Analisar e estabelecer relações, com ou sem apoio de tecnologias digitais, entre as representações de funções polinomiais de 1º grau e o fenômeno ou problema que representam."},{"cod":"EM13MAT104","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Interpretar e resolver","objeto":"sistemas de equações lineares e não lineares","finalidade":"modelar situações-problema de diferentes contextos","bloom":3,"texto":"Interpretar e resolver sistemas de equações lineares e não lineares, com apoio de tecnologias digitais, em contextos que envolvam a modelagem de situações-problema."},{"cod":"EM13MAT105","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Investigar","objeto":"pontos de máximo ou de mínimo de funções","finalidade":"resolver problemas relacionados ao cotidiano e a outras áreas de conhecimento","bloom":4,"texto":"Investigar pontos de máximo ou de mínimo de funções de 2° grau (e de outras funções), com apoio de tecnologias digitais, em contextos que envolvam a modelagem de situações cotidianas."},{"cod":"EM13MAT201","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Propor e testar","objeto":"conjecturas sobre propriedades numéricas e geométricas","finalidade":"demonstrar e validar resultados, com e sem tecnologia","bloom":5,"texto":"Propor e testar conjecturas sobre propriedades de figuras geométricas, utilizando representações e argumentações matemáticas, com e sem apoio de tecnologias digitais."},{"cod":"EM13MAT202","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Resolver e elaborar","objeto":"problemas sobre figuras semelhantes no plano e no espaço","finalidade":"reconhecer condições de semelhança e calcular medidas","bloom":3,"texto":"Resolver e elaborar problemas sobre figuras semelhantes, no plano e no espaço, a partir de condições de semelhança de triângulos."},{"cod":"EM13MAT203","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Calcular e interpretar","objeto":"medidas de posição (média, moda e mediana) e de dispersão (amplitude e desvio padrão)","finalidade":"analisar dados em contextos reais","bloom":3,"texto":"Calcular e interpretar medidas de posição (média, moda, mediana) e de dispersão (amplitude e desvio padrão) de um conjunto de dados, sem o uso de tecnologias, para analisá-los em seu contexto."},{"cod":"EM13MAT301","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Resolver e criar","objeto":"situações-problema com números reais e irracionais","finalidade":"aprofundar conceitos e ampliar o campo numérico","bloom":6,"texto":"Resolver e criar situações-problema, com ou sem apoio de tecnologias digitais, que envolvam números reais, inclusive aquelas relacionadas a situações financeiras e aproximações sucessivas."},{"cod":"EM13MAT302","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Construir modelos","objeto":"empregando funções polinomiais de 1º ou 2º graus e outras funções","finalidade":"resolver problemas de outras áreas do conhecimento","bloom":6,"texto":"Construir modelos empregando as funções polinomiais de 1° ou 2° graus, para resolver problemas de outras áreas do conhecimento e, com o apoio de tecnologias digitais, outras funções."},{"cod":"EM13MAT303","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Resolver e elaborar","objeto":"problemas relacionados ao estudo de polinômios","finalidade":"aplicar operações algébricas com e sem apoio de tecnologias","bloom":3,"texto":"Resolver e elaborar problemas relacionados ao estudo dos polinômios, envolvendo operações algébricas, com e sem apoio de tecnologias digitais."},{"cod":"EM13MAT401","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Compreender e analisar","objeto":"as relações trigonométricas nos triângulos retângulos","finalidade":"resolver problemas de medição e cálculo de distâncias","bloom":4,"texto":"Compreender e analisar as relações trigonométricas (seno, cosseno, tangente) e ângulos agudos no triângulo retângulo, utilizando tecnologias digitais para resolver situações-problema."},{"cod":"EM13MAT402","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Analisar e utilizar","objeto":"relações trigonométricas da circunferência e funções trigonométricas","finalidade":"resolver situações envolvendo fenômenos periódicos e outras áreas do conhecimento","bloom":4,"texto":"Analisar e utilizar relações métricas da circunferência, o número π e as funções trigonométricas para resolver e elaborar problemas em contextos do mundo real."},{"cod":"EM13MAT501","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Investigar e estabelecer","objeto":"conjecturas sobre propriedades de figuras geométricas planas e espaciais","finalidade":"produzir argumentações e demonstrações matemáticas formais","bloom":5,"texto":"Investigar e estabelecer conjecturas sobre propriedades de figuras geométricas (polígonos regulares, sólidos e corpos redondos), com apoio de tecnologias digitais, para produzir demonstrações formais."},{"cod":"EM13MAT502","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Resolver e elaborar","objeto":"problemas com matrizes, determinantes e sistemas de equações lineares","finalidade":"aplicar em diferentes contextos como cálculos computacionais e sistemas","bloom":3,"texto":"Resolver e elaborar problemas que envolvam matrizes, determinantes e sistemas de equações lineares, com e sem apoio de tecnologias digitais."},{"cod":"EM13MAT503","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Elaborar e resolver","objeto":"situações-problema com análise combinatória e probabilidade","finalidade":"resolver problemas em contextos do cotidiano, das ciências e da tecnologia","bloom":3,"texto":"Elaborar e resolver situações-problema envolvendo o princípio fundamental da contagem, arranjos, combinações e probabilidades, inclusive com uso de tecnologias."},{"cod":"EM13MAT504","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Construir e interpretar","objeto":"gráficos e tabelas de distribuições de frequências","finalidade":"compreender a variabilidade e tomar decisões com base em dados","bloom":2,"texto":"Construir e interpretar gráficos e tabelas de distribuições de frequências, de diferentes conjuntos de dados, com e sem apoio de tecnologias digitais."},{"cod":"EM13MAT601","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Resolver e elaborar","objeto":"situações-problema com figuras geométricas no plano e no espaço","finalidade":"empregar relações de semelhança e o Teorema de Tales","bloom":3,"texto":"Resolver e elaborar situações-problema envolvendo figuras geométricas no plano e no espaço, empregando as relações de semelhança e os teoremas de Tales."},{"cod":"EM13MAT602","area":"MAT","comp":"Matemática e suas Tecnologias","verbo":"Analisar e aplicar","objeto":"conceitos e propriedades das cônicas (parábola, elipse e hipérbole)","finalidade":"modelar situações do mundo real e resolver problemas de geometria analítica","bloom":4,"texto":"Analisar e aplicar conceitos e propriedades das cônicas (parábola, elipse e hipérbole) para modelar situações do mundo real e resolver problemas em diferentes contextos."},{"cod":"EM13CNT101","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e representar","objeto":"transformações e conservações em sistemas envolvendo matéria, energia e movimento","finalidade":"realizar previsões sobre comportamentos cotidianos e processos produtivos sustentáveis","bloom":4,"texto":"Analisar e representar, com ou sem o uso de dispositivos e de aplicativos digitais específicos, as transformações e conservações em sistemas que envolvam quantidade de matéria, de energia e de movimento para realizar previsões sobre seus comportamentos em situações cotidianas e em processos produtivos que priorizem o desenvolvimento sustentável, o uso consciente dos recursos naturais e a preservação da vida em todas as suas formas."},{"cod":"EM13CNT102","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar","objeto":"as diversas formas de manifestação da vida","finalidade":"compreender os padrões biológicos e estabelecer conexões evolutivas","bloom":4,"texto":"Analisar as diversas formas de manifestação da vida, reconhecendo e investigando os padrões que determinam as características de um organismo vivo, comparando-os entre os diferentes grupos taxonômicos."},{"cod":"EM13CNT103","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar","objeto":"situações-problema relativas à formação do ambiente e à estrutura dos elementos e compostos da Terra","finalidade":"compreender transformações por fenômenos naturais e atividade humana","bloom":4,"texto":"Analisar situações-problema, com ou sem uso de dispositivos e aplicativos digitais, relativas à formação do ambiente e à estrutura dos elementos e dos compostos presentes na Terra, e às transformações que eles sofrem sob a ação dos fenômenos naturais e da atividade humana."},{"cod":"EM13CNT104","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e debater","objeto":"situações controversas sobre a aplicação de conhecimentos das Ciências da Natureza","finalidade":"elaborar argumentação consistente fundamentada em evidências científicas","bloom":5,"texto":"Analisar e debater situações controversas sobre a aplicação de conhecimentos da área de Ciências da Natureza (energia nuclear, agrotóxicos, transposição de rios, grau de risco de produtos e serviços, entre outros), com base em argumentos consistentes, respeitando diferentes pontos de vista."},{"cod":"EM13CNT105","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar","objeto":"os efeitos de variações climáticas nos sistemas naturais e sociais","finalidade":"propor ações para mitigação e adaptação às mudanças climáticas","bloom":4,"texto":"Analisar os efeitos de variações climáticas nos sistemas naturais e sociais, identificando as causas do aquecimento global e propondo medidas de mitigação e adaptação, valorizando a diversidade de saberes locais."},{"cod":"EM13CNT201","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e utilizar","objeto":"modelos científicos e tecnológicos que explicam estruturas e propriedades da matéria","finalidade":"resolver problemas contextualizados relacionados a aplicações tecnológicas","bloom":4,"texto":"Analisar e utilizar modelos científicos e tecnológicos que explicam as estruturas e propriedades da matéria, incluindo a organização do Sistema Solar e das galáxias, para resolver problemas contextualizados e relacionados a aplicações tecnológicas."},{"cod":"EM13CNT202","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar","objeto":"as diversas formas de poluição e de degradação ambiental","finalidade":"propor e avaliar soluções para problemas ambientais locais e globais","bloom":4,"texto":"Analisar as diversas formas de poluição e de degradação ambiental e propor soluções individuais e/ou coletivas, com base em evidências e argumentos consistentes."},{"cod":"EM13CNT203","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Avaliar e prever","objeto":"os impactos das atividades humanas e de fenômenos naturais na saúde e no ecossistema","finalidade":"propor medidas preventivas e corretivas e desenvolver argumentações científicas","bloom":5,"texto":"Avaliar e prever os impactos das atividades humanas e de fenômenos naturais na saúde e no ecossistema, propondo medidas preventivas e corretivas e desenvolvendo argumentações científicas."},{"cod":"EM13CNT204","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Elaborar","objeto":"explicações, previsões e cálculos a respeito dos movimentos de objetos","finalidade":"aplicar as leis de Newton e a lei da Gravitação Universal para compreender o Universo","bloom":6,"texto":"Elaborar explicações, previsões e cálculos a respeito dos movimentos de objetos na Terra, no Sistema Solar e no Universo com base nas leis de Newton, na lei da Gravitação Universal e em modelos do movimento dos corpos celestes."},{"cod":"EM13CNT205","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e compreender","objeto":"os mecanismos bioquímicos e processos celulares","finalidade":"interpretar fenômenos de saúde, doença e manutenção da vida dos organismos","bloom":4,"texto":"Analisar e compreender os mecanismos bioquímicos e processos celulares, estabelecendo relações com fenômenos de saúde, doença e manutenção da vida dos organismos."},{"cod":"EM13CNT301","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Construir","objeto":"questões, hipóteses, previsões e estimativas com base em conhecimentos das ciências da natureza","finalidade":"desenvolver investigações científicas e avaliar e justificar conclusões","bloom":6,"texto":"Construir questões, elaborar hipóteses, previsões e estimativas, empregar instrumentos de medição e representar e interpretar modelos explicativos, dados e/ou resultados experimentais para construir, avaliar e justificar conclusões no enfrentamento de situações-problema sob uma perspectiva científica."},{"cod":"EM13CNT302","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Comunicar","objeto":"conclusões e resultados de investigações científicas em formatos variados","finalidade":"divulgar conhecimento científico para diferentes públicos de forma coerente e clara","bloom":6,"texto":"Comunicar, para públicos variados, em diversos contextos, resultados de análises, pesquisas e/ou experimentos, elaborando e/ou interpretando textos, gráficos, tabelas, símbolos, códigos e equações, por meio de diferentes linguagens e mídias."},{"cod":"EM13CNT303","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Interpretar e avaliar","objeto":"textos de divulgação científica considerando a apresentação de dados, argumentos e conclusões","finalidade":"reconhecer limitações, vieses e erros em argumentações científicas","bloom":5,"texto":"Interpretar textos de divulgação científica que tratem de temáticas das Ciências da Natureza, disponíveis em diferentes mídias, considerando a apresentação dos dados, tanto na forma de textos como em outras linguagens e a análise do preparo e da coerência das conclusões."},{"cod":"EM13CNT304","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e avaliar","objeto":"os impactos de novas tecnologias nas formas de vida, saúde humana e ambiente","finalidade":"distinguir usos socialmente responsáveis e tomar decisões éticas","bloom":5,"texto":"Analisar e avaliar os impactos, tanto sinérgicos quanto antagônicos, de novas tecnologias e seus efeitos sobre as formas de vida, a saúde humana e o ambiente, para tomar decisões éticas e responsáveis."},{"cod":"EM13CNT305","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Investigar e analisar","objeto":"programas e políticas públicas relacionadas a saúde, saneamento e infraestrutura","finalidade":"identificar necessidades locais e regionais e avaliar ações para melhoria da qualidade de vida","bloom":4,"texto":"Investigar e analisar os efeitos de programas de infraestrutura e demais serviços básicos e identificar necessidades locais e/ou regionais, a fim de avaliar e/ou promover ações que contribuam para a melhoria na qualidade de vida e nas condições de saúde da população."},{"cod":"EM13CNT306","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Avaliar","objeto":"os riscos envolvidos em atividades que utilizam radiações ou substâncias químicas","finalidade":"tomar decisões fundamentadas para prevenção de agravos à saúde","bloom":5,"texto":"Avaliar os riscos envolvidos em atividades cotidianas e profissionais que utilizam radiações ionizantes e não ionizantes, produtos químicos e agrotóxicos, e tomar decisões fundamentadas para prevenção de danos à saúde."},{"cod":"EM13CNT307","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e debater","objeto":"a produção, os usos e os impactos das biotecnologias","finalidade":"desenvolver posicionamento ético diante das implicações socioambientais e morais","bloom":5,"texto":"Analisar e debater a produção, os usos e os impactos das biotecnologias nas diferentes formas de vida (humana, vegetal, animal e microbiana), reconhecendo as implicações éticas e socioambientais."},{"cod":"EM13CNT308","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar","objeto":"questões socioambientais, políticas e econômicas relativas à dependência de recursos fósseis","finalidade":"discutir a necessidade de alternativas mais sustentáveis de energia","bloom":4,"texto":"Analisar questões socioambientais, políticas e econômicas relativas à dependência do mundo atual em relação aos recursos fósseis e discutir a necessidade de alternativas mais sustentáveis de produção e consumo de energia."},{"cod":"EM13CNT309","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Analisar e discutir","objeto":"questões socioambientais relacionadas à dependência de recursos fósseis e às alternativas renováveis","finalidade":"construir posicionamentos éticos e embasados sobre energia e sustentabilidade","bloom":4,"texto":"Analisar e discutir questões socioambientais, políticas e econômicas relativas à dependência do mundo atual em relação aos recursos fósseis e às alternativas renováveis de produção e consumo de energia."},{"cod":"EM13CNT310","area":"CNT","comp":"Ciências da Natureza e suas Tecnologias","verbo":"Investigar e analisar","objeto":"os efeitos de programas de infraestrutura e serviços básicos","finalidade":"identificar necessidades locais e promover ações para melhoria na qualidade de vida","bloom":4,"texto":"Investigar e analisar os efeitos de programas de infraestrutura e demais serviços básicos (saneamento, energia elétrica, transporte, telecomunicações, cobertura vacinal, atendimento primário à saúde e produção de alimentos, entre outros) e identificar necessidades locais e/ou regionais em relação a esses serviços, a fim de avaliar e/ou promover ações que contribuam para a melhoria na qualidade de vida e nas condições de saúde da população."},{"cod":"EM13CHS101","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar, analisar e comparar","objeto":"diferentes fontes e narrativas expressas em diversas linguagens","finalidade":"compreender ideias filosóficas e processos históricos, geográficos, políticos e culturais","bloom":4,"texto":"Identificar, analisar e comparar diferentes fontes e narrativas expressas em diversas linguagens, com vistas à compreensão de ideias filosóficas e de processos e eventos históricos, geográficos, políticos, econômicos, sociais, ambientais e culturais."},{"cod":"EM13CHS102","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar, analisar e discutir","objeto":"circunstâncias históricas e culturais de matrizes conceituais como etnocentrismo e racismo","finalidade":"avaliar criticamente seu significado histórico e comparar com outras narrativas","bloom":5,"texto":"Identificar, analisar e discutir as circunstâncias históricas, geográficas, políticas, econômicas, sociais, ambientais e culturais de matrizes conceituais (etnocentrismo, racismo, evolução, modernidade, cooperativismo/desenvolvimento etc.), avaliando criticamente seu significado histórico."},{"cod":"EM13CHS103","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Elaborar hipóteses e selecionar evidências","objeto":"relativas a processos políticos, econômicos, sociais, ambientais e culturais","finalidade":"compor argumentos com base na sistematização de dados e informações de diversas naturezas","bloom":6,"texto":"Elaborar hipóteses, selecionar evidências e compor argumentos relativos a processos políticos, econômicos, sociais, ambientais, culturais e epistemológicos, com base na sistematização de dados e informações de diversas naturezas."},{"cod":"EM13CHS104","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar","objeto":"objetos e vestígios da cultura material e imaterial","finalidade":"identificar conhecimentos, valores, crenças e práticas de diferentes sociedades no tempo e no espaço","bloom":4,"texto":"Analisar objetos e vestígios da cultura material e imaterial de modo a identificar conhecimentos, valores, crenças e práticas que caracterizam a identidade e a diversidade cultural de diferentes sociedades inseridas no tempo e no espaço."},{"cod":"EM13CHS105","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar, contextualizar e criticar","objeto":"tipologias evolutivas e recursos explicativos lineares presentes em discursos sobre sociedades","finalidade":"combater etnocentrismos, racismos e preconceitos culturais","bloom":5,"texto":"Identificar, contextualizar e criticar tipologias evolutivas e outros recursos explicativos de ordem linear presentes nos discursos sobre as sociedades e culturas, combatendo etnocentrismos, racismos e preconceitos culturais."},{"cod":"EM13CHS106","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar as formas de organização","objeto":"de diferentes sociedades, papéis sociais e relações de trabalho e poder","finalidade":"compreender formas de dominação e de resistência no passado e no presente","bloom":4,"texto":"Analisar as formas de organização de diferentes sociedades, os papéis sociais, as relações de trabalho e de poder, e as formas de dominação e de resistência presentes no passado e no presente."},{"cod":"EM13CHS201","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar e caracterizar","objeto":"as dinâmicas das populações, migrações, padrões de urbanização e mudanças socioambientais","finalidade":"compreender transformações nos territórios e na qualidade de vida das populações","bloom":4,"texto":"Analisar e caracterizar as dinâmicas das populações, migrações, padrões de urbanização e suas implicações socioambientais, nos diferentes países, considerando aspectos como crescimento econômico e riscos climáticos."},{"cod":"EM13CHS202","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar e avaliar","objeto":"os impactos das tecnologias na estrutura produtiva e no mercado de trabalho","finalidade":"identificar desigualdades resultantes do processo de globalização","bloom":5,"texto":"Analisar e avaliar os impactos das tecnologias na estrutura produtiva, no mercado de trabalho e na vida das populações, identificando as desigualdades resultantes do processo de globalização."},{"cod":"EM13CHS203","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Comparar","objeto":"as relações de produção, distribuição, consumo e circulação de bens em diferentes regiões","finalidade":"compreender desigualdades socioespaciais e propor alternativas para enfrentá-las","bloom":4,"texto":"Comparar as relações de produção, distribuição, consumo e circulação de bens em diferentes regiões do Brasil e do mundo, a fim de compreender as desigualdades socioespaciais e propor alternativas para enfrentá-las."},{"cod":"EM13CHS204","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Comparar e analisar","objeto":"indicadores de desenvolvimento humano de diferentes países e regiões","finalidade":"problematizar as desigualdades socioeconômicas e ambientais e seus modelos de desenvolvimento","bloom":4,"texto":"Comparar e analisar indicadores de desenvolvimento humano de diferentes países e regiões do mundo, problematizando as desigualdades socioeconômicas e ambientais, bem como os modelos de desenvolvimento e suas implicações."},{"cod":"EM13CHS205","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar","objeto":"a produção de diferentes espaços, territórios, regiões e lugares em suas dinâmicas históricas","finalidade":"compreender a participação de diferentes sujeitos, grupos e povos na formação dos espaços","bloom":4,"texto":"Analisar a produção de diferentes espaços, territórios, regiões e lugares em suas dinâmicas de formação histórica, considerando a participação de diferentes sujeitos, grupos e povos."},{"cod":"EM13CHS206","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar a formação de","objeto":"territórios e fronteiras em diferentes momentos históricos","finalidade":"compreender conflitos geopolíticos, disputas por recursos e soberania","bloom":4,"texto":"Analisar a formação de territórios e fronteiras em diferentes momentos da história, identificando os conflitos geopolíticos, disputas por recursos naturais e soberania em diferentes partes do mundo."},{"cod":"EM13CHS301","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Problematizar","objeto":"hábitos e práticas de produção, reaproveitamento e descarte de resíduos","finalidade":"elaborar propostas que promovam a sustentabilidade socioambiental e o consumo responsável","bloom":6,"texto":"Problematizar hábitos e práticas individuais e coletivos de produção, reaproveitamento e descarte de resíduos em metrópoles, áreas urbanas e rurais, e comunidades com diferentes características socioeconômicas, e elaborar e/ou selecionar propostas de ação que promovam a sustentabilidade socioambiental, o combate à poluição sistêmica e o consumo responsável."},{"cod":"EM13CHS302","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar e avaliar criticamente","objeto":"os impactos econômicos e socioambientais de cadeias produtivas","finalidade":"considerar o modo de vida das populações locais e o compromisso com a sustentabilidade","bloom":5,"texto":"Analisar e avaliar criticamente os impactos econômicos e socioambientais de cadeias produtivas ligadas à exploração de recursos naturais e às atividades agropecuárias em diferentes ambientes e escalas de análise."},{"cod":"EM13CHS303","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Avaliar medidas e propor ações","objeto":"de planejamento urbano para a promoção de espaços mais democráticos e sustentáveis","finalidade":"combater desigualdades e exclusão nos espaços urbanos","bloom":5,"texto":"Avaliar medidas e propor ações que promovam o acesso democrático à cidade, reconhecendo a função social da propriedade e do espaço urbano e o direito à cidade."},{"cod":"EM13CHS304","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar e avaliar","objeto":"as políticas públicas de promoção da igualdade e equidade entre grupos socioculturais","finalidade":"identificar avanços e limites dessas políticas","bloom":5,"texto":"Analisar e avaliar criticamente as políticas públicas de promoção da igualdade e equidade entre grupos socioculturais, identificando avanços e limites dessas políticas."},{"cod":"EM13CHS401","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar e analisar","objeto":"as relações entre sujeitos e sociedades com culturas distintas diante de transformações técnicas e tecnológicas","finalidade":"compreender os impactos nas formas de trabalho, cultura e organização social","bloom":4,"texto":"Identificar e analisar as relações entre sujeitos, grupos, classes sociais e sociedades com culturas distintas diante das transformações técnicas, tecnológicas e informacionais e das novas formas de trabalho ao longo do tempo."},{"cod":"EM13CHS402","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar","objeto":"diferentes formas de violência, suas causas, consequências e medidas de enfrentamento","finalidade":"desenvolver propostas para a promoção da paz e dos direitos humanos","bloom":4,"texto":"Analisar diferentes formas de violência (física, simbólica, psicológica, estrutural etc.), suas causas, consequências e as medidas políticas e sociais adotadas para o seu enfrentamento."},{"cod":"EM13CHS403","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar e avaliar","objeto":"as relações de produção, as formas de trabalho e o papel das tecnologias","finalidade":"compreender desigualdades sociais e transformações no mercado de trabalho","bloom":5,"texto":"Analisar e avaliar as relações de produção, as formas de trabalho e o papel das tecnologias, identificando as transformações no mercado de trabalho e suas implicações na vida dos trabalhadores."},{"cod":"EM13CHS404","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar e discutir","objeto":"os múltiplos aspectos do trabalho em diferentes contextos históricos e geográficos","finalidade":"compreender os efeitos sobre as gerações, especialmente os jovens","bloom":4,"texto":"Identificar e discutir os múltiplos aspectos do trabalho em diferentes circunstâncias e contextos históricos e/ou geográficos e seus efeitos sobre as gerações, em especial, os jovens, levando em consideração as transformações do mercado de trabalho."},{"cod":"EM13CHS501","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Compreender e analisar","objeto":"os fundamentos da ética, da moral e da política","finalidade":"desenvolver postura ética e participar qualificadamente da vida democrática","bloom":4,"texto":"Compreender e analisar os fundamentos da ética, da moral e da política, correlacionando-os com as práticas sociais e reconhecendo o papel dos valores, princípios e normas para a convivência democrática."},{"cod":"EM13CHS502","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar os princípios e valores","objeto":"da democracia, dos direitos humanos e da cidadania","finalidade":"promover ações em defesa da democracia e dos direitos fundamentais","bloom":4,"texto":"Analisar os princípios e valores da democracia, dos direitos humanos e da cidadania, compreendendo sua fundamentação filosófica e histórica e o papel do Estado no seu estabelecimento e garantia."},{"cod":"EM13CHS503","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar","objeto":"diversas formas de violência, suas causas e mecanismos de combate","finalidade":"discutir e avaliar mecanismos para combatê-las e construir uma cultura de paz","bloom":4,"texto":"Identificar diversas formas de violência (física, simbólica, psicológica etc.), suas principais vítimas, suas causas sociais, psicológicas e afetivas, seus significados e usos políticos, sociais e culturais, discutindo e avaliando mecanismos para combatê-las."},{"cod":"EM13CHS504","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar e combater","objeto":"o autoritarismo, o populismo e o paternalismo na política e na sociedade","finalidade":"defender práticas democráticas e formas de organização que promovam a autonomia e os direitos humanos","bloom":5,"texto":"Analisar e combater o autoritarismo, o populismo e o paternalismo, reconhecendo e defendendo práticas sociais e políticas democráticas e formas de organização da sociedade civil que promovam a autonomia, a liberdade e os direitos humanos."},{"cod":"EM13CHS505","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar","objeto":"as demandas e os protagonismos políticos e culturais dos povos indígenas e populações afrodescendentes","finalidade":"promover ações para a redução das desigualdades étnico-raciais","bloom":4,"texto":"Analisar as demandas e os protagonismos políticos, sociais e culturais dos povos indígenas e das populações afrodescendentes no Brasil contemporâneo, considerando o contexto de exclusão e as lutas por direitos."},{"cod":"EM13CHS601","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar e analisar","objeto":"as demandas e protagonismos políticos dos povos indígenas e afrodescendentes no Brasil contemporâneo","finalidade":"promover ações para a redução das desigualdades étnico-raciais no país","bloom":4,"texto":"Identificar e analisar as demandas e os protagonismos políticos, sociais e culturais dos povos indígenas e das populações afrodescendentes (incluindo as quilombolas) no Brasil contemporâneo considerando a história das Américas e o contexto de exclusão e inclusão precária desses grupos."},{"cod":"EM13CHS602","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Identificar e caracterizar","objeto":"a presença do paternalismo, autoritarismo e populismo na política brasileira e latino-americana","finalidade":"relacionar com formas de organização em defesa da autonomia e da democracia","bloom":4,"texto":"Identificar e caracterizar a presença do paternalismo, do autoritarismo e do populismo na política, na sociedade e nas culturas brasileira e latino-americana, em períodos ditatoriais e democráticos."},{"cod":"EM13CHS603","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar","objeto":"a formação das identidades nacionais e regionais e seus mitos","finalidade":"desenvolver visão crítica e desconstruir narrativas excludentes","bloom":4,"texto":"Analisar a formação das identidades nacionais e regionais, seus mitos e preconceitos, e o papel da história na construção de identidades inclusivas e democráticas."},{"cod":"EM13CHS604","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar","objeto":"as formas de manifestação das religiões e das filosofias de vida","finalidade":"promover respeito à diversidade e ao diálogo inter-religioso e intercultural","bloom":4,"texto":"Analisar as formas de manifestação das religiões e das filosofias de vida, reconhecendo a diversidade e a importância do respeito às diferentes crenças e formas de espiritualidade."},{"cod":"EM13CHS605","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar os princípios","objeto":"da Declaração dos Direitos Humanos","finalidade":"identificar progressos e entraves à concretização desses direitos e promover ações concretas","bloom":4,"texto":"Analisar os princípios da Declaração dos Direitos Humanos, recorrendo às noções de justiça, igualdade e fraternidade, identificar os progressos e entraves à concretização desses direitos nas diversas sociedades contemporâneas."},{"cod":"EM13CHS606","area":"CHS","comp":"Ciências Humanas e Sociais Aplicadas","verbo":"Analisar as contradições","objeto":"das democracias modernas e as limitações dos sistemas políticos","finalidade":"construir posicionamentos críticos e propor formas de aperfeiçoamento democrático","bloom":4,"texto":"Analisar as contradições das democracias modernas e os limites dos sistemas políticos contemporâneos, a fim de construir posicionamentos críticos e propor formas de aperfeiçoamento democrático."}];
+// ===== STATE =====
+var ST = { areas:[], bloomLevel:0, methods:[], instrs:[], currentHab:null };
+var bloomNames = {1:'Lembrar',2:'Compreender',3:'Aplicar',4:'Analisar',5:'Avaliar',6:'Criar'};
+var bloomClasses = {1:'bl1-bg',2:'bl2-bg',3:'bl3-bg',4:'bl4-bg',5:'bl5-bg',6:'bl6-bg'};
+var focusedIdx = -1;
+
+// ===== NAV =====
+var pct = [16,33,50,66,83,100];
+function goTo(n){
+  document.querySelectorAll('.page').forEach(function(p,i){p.classList.toggle('active',i===n);});
+  document.querySelectorAll('.nav-step').forEach(function(s,i){s.classList.remove('active','done');if(i===n)s.classList.add('active');else if(i<n)s.classList.add('done');});
+  document.getElementById('progressFill').style.width=pct[n]+'%';
+  if(n===5)updatePreview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ===== AREA =====
+function toggleArea(el,a){el.classList.toggle('selected');if(el.classList.contains('selected'))ST.areas.push(a);else ST.areas=ST.areas.filter(function(x){return x!==a;});}
+
+// ===== BLOOM =====
+function selectBloom(l){
+  document.querySelectorAll('.bloom-row').forEach(function(r){r.classList.remove('selected');});
+  var row=document.getElementById('brow'+l);
+  if(row)row.classList.add('selected');
+  ST.bloomLevel=l;
+  document.getElementById('bloomSel').value=l;
+}
+
+// ===== SKILL SELECTOR =====
+var filteredSkills = [];
+
+function renderDropdown(skills){
+  var dd = document.getElementById('skillDropdown');
+  if(!skills.length){dd.innerHTML='<div style="padding:14px;text-align:center;color:#888;font-size:.85rem;">Nenhuma habilidade encontrada. Tente outro termo.</div>';dd.classList.add('open');return;}
+  var areaOrder = ['LGG','MAT','CNT','CHS'];
+  var areaLabels = {LGG:'Linguagens e suas Tecnologias',MAT:'Matemática e suas Tecnologias',CNT:'Ciências da Natureza e suas Tecnologias',CHS:'Ciências Humanas e Sociais Aplicadas'};
+  var grouped = {};
+  areaOrder.forEach(function(a){grouped[a]=[];});
+  skills.forEach(function(h){if(grouped[h.area])grouped[h.area].push(h);});
+  var html='';
+  areaOrder.forEach(function(a){
+    if(!grouped[a].length)return;
+    html+='<div class="skill-group-header">'+areaLabels[a]+'</div>';
+    grouped[a].forEach(function(h,idx){
+      var bloomCls='b'+h.bloom;
+      html+='<div class="skill-option" onclick="selectSkill(\''+h.cod+'\')" data-cod="'+h.cod+'">';
+      html+='<span class="skill-cod">'+h.cod+'</span>';
+      html+='<span class="skill-verb">'+h.verbo+'</span>';
+      html+='<span class="bloom-badge bloom-mini '+bloomCls+'" style="float:right;">Bloom '+h.bloom+' — '+bloomNames[h.bloom]+'</span>';
+      html+='<span class="skill-preview">'+h.texto.substring(0,90)+'...</span>';
+      html+='</div>';
+    });
+  });
+  dd.innerHTML=html;
+  dd.classList.add('open');
+}
+
+function filterSkills(){
+  var q = document.getElementById('skillSearch').value.trim().toLowerCase();
+  if(!q){filteredSkills=HABILIDADES_DB;renderDropdown(filteredSkills);return;}
+  filteredSkills = HABILIDADES_DB.filter(function(h){
+    return h.cod.toLowerCase().includes(q) || h.verbo.toLowerCase().includes(q) || h.objeto.toLowerCase().includes(q) || h.texto.toLowerCase().includes(q) || h.comp.toLowerCase().includes(q);
+  });
+  renderDropdown(filteredSkills);
+}
+
+function openDropdown(){
+  if(!document.getElementById('skillDropdown').classList.contains('open')){
+    filteredSkills=HABILIDADES_DB;
+    renderDropdown(filteredSkills);
+  }
+}
+
+function selectSkill(cod){
+  var h = HABILIDADES_DB.find(function(x){return x.cod===cod;});
+  if(!h)return;
+  ST.currentHab = h;
+  document.getElementById('skillSearch').value = h.cod+' — '+h.verbo;
+  document.getElementById('skillDropdown').classList.remove('open');
+  document.getElementById('selectedSkillWrap').style.display='block';
+  document.getElementById('noSkillWrap').style.display='none';
+  // Fill card
+  document.getElementById('sc-cod').textContent=h.cod;
+  document.getElementById('sc-comp').textContent=h.comp;
+  // Highlight texto
+  var texto = h.texto;
+  var highlighted = texto;
+  // Find para clause
+  var paraIdx = texto.toLowerCase().indexOf(' para ');
+  var verbPart = h.verbo;
+  if(verbPart){
+    var re = new RegExp('('+verbPart.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','i');
+    highlighted = highlighted.replace(re,'<span class="verb-hl">$1</span>');
+  }
+  if(paraIdx>-1){
+    var purpStr = texto.substring(paraIdx);
+    highlighted = highlighted.replace(purpStr,'<span class="purp-hl">'+purpStr+'</span>');
+  }
+  document.getElementById('sc-texto').innerHTML = highlighted;
+  // Bloom badge
+  var bc = bloomClasses[h.bloom]||'bl4-bg';
+  document.getElementById('sc-bloom-badge').innerHTML='<span class="bloom-badge-lg '+bc+'">📊 Nível '+h.bloom+' — '+bloomNames[h.bloom]+'</span>';
+  // Dissection
+  document.getElementById('dc-verb').textContent = h.verbo;
+  document.getElementById('dc-obj').textContent = h.objeto;
+  document.getElementById('dc-purp').textContent = h.finalidade;
+  // Auto-select bloom
+  selectBloom(h.bloom);
+  // Auto-fill componente if empty
+  if(!document.getElementById('componente').value) document.getElementById('componente').value = h.comp;
+}
+
+function clearSkill(){
+  ST.currentHab=null;
+  document.getElementById('skillSearch').value='';
+  document.getElementById('selectedSkillWrap').style.display='none';
+  document.getElementById('noSkillWrap').style.display='block';
+  document.getElementById('skillDropdown').classList.remove('open');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click',function(e){
+  var wrap = document.querySelector('.skill-selector-wrap');
+  if(wrap && !wrap.contains(e.target)) document.getElementById('skillDropdown').classList.remove('open');
+});
+
+// Manual hab
+function updateManualHab(){
+  var cod = document.getElementById('codManual').value.trim();
+  var texto = document.getElementById('habManual').value.trim();
+  if(cod||texto) ST.currentHab = {cod:cod,texto:texto,verbo:'',objeto:'',finalidade:'',bloom:0,comp:document.getElementById('componente').value};
+}
+
+// ===== METHODS / INSTRS =====
+function toggleMethod(el){el.classList.toggle('selected');}
+function toggleInstr(el){el.classList.toggle('selected');}
+function getMethods(){return Array.from(document.querySelectorAll('#methodGrid .method-chip.selected')).map(function(e){return e.textContent.trim();});}
+function getInstrs(){
+  var sel=Array.from(document.querySelectorAll('#instrGrid .method-chip.selected')).map(function(e){return e.textContent.trim();});
+  var c=document.getElementById('instrCompl').value.trim();
+  return sel.concat(c?[c]:[]).join(' • ');
+}
+
+// ===== CRITERIA =====
+function addCrit(){
+  var l=document.getElementById('criteriaList');
+  var d=document.createElement('div');d.className='criteria-item';
+  d.innerHTML='<input type="text" placeholder="Descreva um critério observável e alinhado ao verbo da habilidade"><button class="del-btn" onclick="removeCrit(this)">✕</button>';
+  l.appendChild(d);
+}
+function removeCrit(b){var i=b.parentElement;i.parentElement.removeChild(i);}
+function getCrits(){return Array.from(document.querySelectorAll('#criteriaList .criteria-item input')).map(function(i){return i.value.trim();}).filter(Boolean);}
+function setCrits(arr){
+  var c=document.getElementById('criteriaList');c.innerHTML='';
+  arr.forEach(function(t){var d=document.createElement('div');d.className='criteria-item';d.innerHTML='<input type="text" value="'+esc(t)+'"><button class="del-btn" onclick="removeCrit(this)">✕</button>';c.appendChild(d);});
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ===== TABS =====
+function openTab(id){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='tabChk')buildChecklist();
+}
+
+// ===== PREVIEW =====
+function getHabText(){
+  if(ST.currentHab){
+    var cod=ST.currentHab.cod?'('+ST.currentHab.cod+') ':'';
+    return cod+(ST.currentHab.texto||'');
+  }
+  var cod=document.getElementById('codManual').value.trim();
+  var t=document.getElementById('habManual').value.trim();
+  return (cod?'('+cod+') ':'')+t;
+}
+function updatePreview(){
+  var area=ST.areas.join(', ');
+  var comp=document.getElementById('componente').value;
+  var areaFull=[area,comp].filter(Boolean).join(' — ');
+  var bloom=ST.bloomLevel?'Nível '+ST.bloomLevel+' — '+bloomNames[ST.bloomLevel]:'—';
+  var crit=getCrits().map(function(c,i){return (i+1)+'. '+c;}).join('\n');
+  document.getElementById('p_escola').textContent=document.getElementById('escola').value||'—';
+  document.getElementById('p_prof').textContent=document.getElementById('professor').value||'—';
+  document.getElementById('p_area').textContent=areaFull||'—';
+  document.getElementById('p_tema').textContent=document.getElementById('temaGerador').value||'—';
+  document.getElementById('p_turma').textContent=document.getElementById('turma').value||'—';
+  document.getElementById('p_hab').textContent=getHabText()||'—';
+  document.getElementById('p_bloom').textContent=bloom;
+  document.getElementById('p_cont').textContent=document.getElementById('conteudo').value||'—';
+  document.getElementById('p_met').textContent=document.getElementById('metodologia').value||'—';
+  document.getElementById('p_crit').textContent=crit||'—';
+  document.getElementById('p_instr').textContent=getInstrs()||'—';
+  document.getElementById('p_carga').textContent=document.getElementById('cargaHoraria').value||'—';
+  document.getElementById('p_ref').textContent=document.getElementById('referencias').value||'—';
+}
+
+// ===== CHECKLIST =====
+function buildChecklist(){
+  var hab=getHabText();
+  var cont=document.getElementById('conteudo').value.trim();
+  var met=document.getElementById('metodologia').value.trim();
+  var crits=getCrits();
+  var instr=getInstrs();
+  var checks=[
+    {ok:!!ST.currentHab&&!!ST.currentHab.cod, label:'Habilidade selecionada da lista BNCC com código correto', tag:'Obrigatório'},
+    {ok:!!hab, label:'Texto completo da habilidade presente', tag:'Obrigatório'},
+    {ok:ST.bloomLevel>0, label:'Nível cognitivo de Bloom identificado', tag:'Alinhamento'},
+    {ok:!!cont, label:'Objeto de conhecimento / conteúdo definido', tag:'Obrigatório'},
+    {ok:cont.length>30, label:'Conteúdo detalhado e alinhado ao verbo da habilidade', tag:'Qualidade'},
+    {ok:!!met, label:'Caminho metodológico descrito', tag:'Obrigatório'},
+    {ok:met.length>80, label:'Metodologia propõe atividade no nível cognitivo correto', tag:'Alinhamento'},
+    {ok:crits.length>0, label:'Critérios de avaliação definidos', tag:'Obrigatório'},
+    {ok:crits.length>=2, label:'Pelo menos 2 critérios observáveis', tag:'Qualidade'},
+    {ok:!!instr, label:'Instrumento(s) de avaliação selecionado(s)', tag:'Obrigatório'},
+    {ok:!!document.getElementById('professor').value.trim(), label:'Nome do professor informado', tag:'Identificação'},
+    {ok:!!document.getElementById('turma').value.trim(), label:'Turma / etapa informada', tag:'Identificação'},
+    {ok:ST.areas.length>0, label:'Área do conhecimento selecionada', tag:'Identificação'},
+  ];
+  var html='';
+  checks.forEach(function(c){
+    var cls=c.ok?'chk-item chk-ok':'chk-item chk-warn';
+    var icon=c.ok?'✅':'⚠️';
+    html+='<div class="'+cls+'"><input type="checkbox" '+(c.ok?'checked':'')+' disabled><span style="flex:1;">'+icon+' '+c.label+'</span><span class="chk-tag">'+c.tag+'</span></div>';
+  });
+  document.getElementById('checklistSED').innerHTML=html;
+}
+
+// ===== AI =====
+var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território Catarinense) e Taxonomia de Bloom para o Ensino Médio e EJA. Regras: 1) Nunca troque o verbo da habilidade — isso muda o nível cognitivo. 2) Critérios devem ser observáveis e derivados do próprio verbo. 3) O conteúdo é meio para desenvolver a habilidade. 4) A metodologia deve engajar o aluno no mesmo nível cognitivo do verbo. 5) Critérios vagos (\"demonstrar progressão\", \"mostrar evolução\") NÃO são aceitos. Responda sempre em português do Brasil. Seja direto e prático.';
+
+// ===== GEMINI API =====
+var GEMINI_API_KEY = ''; // Cole sua chave aqui ou use campo abaixo
+var GEMINI_MODEL = 'gemini-2.0-flash';
+
+async function callGemini(prompt){
+  var key = window.GEMINI_KEY || GEMINI_API_KEY;
+  if(!key) throw new Error('Chave da API Gemini não configurada. Clique em ⚙️ Configurar IA para inserir sua chave.');
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+key;
+  var body = {
+    system_instruction:{parts:[{text: SYS}]},
+    contents:[{role:'user',parts:[{text:prompt}]}],
+    generationConfig:{maxOutputTokens:1200,temperature:0.7}
+  };
+  var r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var d = await r.json();
+  if(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)
+    return d.candidates[0].content.parts.map(function(p){return p.text||'';}).join('');
+  if(d.error) throw new Error('Gemini: '+d.error.message);
+  throw new Error('Resposta inesperada da API Gemini');
+}
+
+// callClaude removido — use callGemini
+
+function habInfo(){
+  var h=ST.currentHab;
+  if(h)return 'Código: '+h.cod+'\nHabilidade: '+h.texto+'\nNível de Bloom: '+ST.bloomLevel+' — '+bloomNames[ST.bloomLevel]+'\nVerbo: '+h.verbo;
+  return 'Código: '+(document.getElementById('codManual').value||'não informado')+'\nHabilidade: '+(document.getElementById('habManual').value||'não informada');
+}
+
+async function analisarIA(){
+  var b=document.getElementById('btnIA'),r=document.getElementById('iaResult');
+  if(!getHabText()){alert('Selecione ou digite uma habilidade primeiro.');return;}
+  b.disabled=true;r.className='ai-result loading';r.innerHTML='<span class="spinner"></span>Analisando...';
+  try{var t=await callGemini('Analise esta habilidade:\n\n'+habInfo()+'\n\nForneça:\n1. Verbos identificados e nível de Bloom confirmado\n2. O que o aluno precisa FAZER (ação cognitiva)\n3. Sobre o quê / com o quê\n4. Para quê (finalidade)\n5. Alertas sobre erros comuns no planejamento desta habilidade\n\nSeja direto e técnico.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');}
+  catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
+  b.disabled=false;
+}
+
+async function sugerirConteudo(){
+  var b=document.getElementById('btnCont'),r=document.getElementById('iaCont');
+  if(!getHabText()){alert('Selecione a habilidade primeiro.');return;}
+  b.disabled=true;r.className='ai-result loading';r.innerHTML='<span class="spinner"></span>Sugerindo...';
+  try{var t=await callGemini(habInfo()+'\n\nSugira 5 a 8 objetos de conhecimento (conteúdos) que são MEIOS para desenvolver esta habilidade.\nIndique brevemente como cada conteúdo contribui para o verbo da habilidade.\nFormate como lista numerada.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');if(!document.getElementById('conteudo').value)document.getElementById('conteudo').value=t;}
+  catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
+  b.disabled=false;
+}
+
+async function sugerirMet(){
+  var b=document.getElementById('btnMet'),r=document.getElementById('iaMet');
+  if(!getHabText()){alert('Selecione a habilidade primeiro.');return;}
+  b.disabled=true;r.className='ai-result loading';r.innerHTML='<span class="spinner"></span>Elaborando roteiro...';
+  var cont=document.getElementById('conteudo').value.trim();
+  var turma=document.getElementById('turma').value.trim();
+  var tema=document.getElementById('temaGerador').value.trim();
+  try{var t=await callGemini(habInfo()+'\nTema gerador: '+(tema||'não informado')+'\nTurma: '+(turma||'não informado')+'\nConteúdo: '+(cont||'não especificado')+'\n\nElabore um roteiro metodológico em 3 momentos (inicial, desenvolvimento, sistematização) que EXIJA do aluno o mesmo nível cognitivo do verbo da habilidade. Máximo 3 parágrafos. Foco no que o ALUNO faz. Adequado para EJA/Ensino Médio.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');if(!document.getElementById('metodologia').value)document.getElementById('metodologia').value=t;}
+  catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
+  b.disabled=false;
+}
+
+async function sugerirCrit(){
+  var b=document.getElementById('btnCrit'),r=document.getElementById('iaCrit');
+  if(!getHabText()){alert('Selecione a habilidade primeiro.');return;}
+  b.disabled=true;r.className='ai-result loading';r.innerHTML='<span class="spinner"></span>Elaborando critérios...';
+  try{var t=await callGemini(habInfo()+'\n\nElabore 4 critérios de avaliação OBSERVÁVEIS e ESPECÍFICOS.\nREGRAS: comece cada critério com verbo derivado da habilidade. NUNCA use: \"demonstrar progressão\", \"mostrar envolvimento\", \"aplicação prática e conexões\".\nFormato: frase curta, verbo na 3ª pessoa do singular. Exemplo correto: \"Analisa situações do cotidiano identificando fenômenos elétricos\".\nRetorne apenas a lista, um critério por linha.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');var lines=t.split('\n').map(function(l){return l.replace(/^[\d\.\-\•\*\s]+/,'').trim();}).filter(function(l){return l.length>5;});if(lines.length)setCrits(lines);}
+  catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
+  b.disabled=false;
+}
+
+// ===== EXPORT DOCX =====
+// Modelo fiel ao Plano_de_Aula_CEJA.docx
+// Tabela cabeçalho: cols [1845, 8498] total 10343
+// Tabela principal: cols [2520, 7830] total 10350
+// Margem: top:426 right:707 bottom:709 left:851
+// Labels originais: ver modelo oficial
+
+async function exportDocx(){
+  var st=document.getElementById('st'),btn=document.getElementById('expBtn');
+  st.className='status-msg';st.textContent='Gerando documento...';btn.disabled=true;
+  try{
+    var d=window.docx;
+    if(!d)throw new Error('Biblioteca docx não carregada. Aguarde o carregamento da página.');
+    var Document=d.Document,Packer=d.Packer,Paragraph=d.Paragraph,TextRun=d.TextRun;
+    var Table=d.Table,TableRow=d.TableRow,TableCell=d.TableCell,ImageRun=d.ImageRun;
+    var AlignmentType=d.AlignmentType,WidthType=d.WidthType,BorderStyle=d.BorderStyle;
+    var ShadingType=d.ShadingType,VerticalAlign=d.VerticalAlign,HeightRule=d.HeightRule;
+
+    // ── helpers ──
+    var brd={style:BorderStyle.SINGLE,size:6,color:'000000'};
+    var ab={top:brd,bottom:brd,left:brd,right:brd};
+    var B=function(t){return new TextRun({text:String(t||''),bold:true,font:'Arial',size:20,boldComplexScript:true});};
+    var N=function(t){return new TextRun({text:String(t||''),font:'Arial',size:20});};
+
+    // Célula rótulo (col esquerda) — fundo EEE8D8, bold, centralizado vertical
+    var LC=function(label){
+      return new TableCell({
+        width:{size:2520,type:WidthType.DXA},
+        borders:ab,
+        shading:{fill:'EEE8D8',type:ShadingType.CLEAR},
+        margins:{top:80,bottom:80,left:160,right:120},
+        verticalAlign:VerticalAlign.CENTER,
+        children:[new Paragraph({children:[B(label)]})]
+      });
+    };
+
+    // Célula valor (col direita) — quebra linha em \n
+    var VC=function(text){
+      var lines=(String(text||'')).split('\n');
+      var paras=lines.map(function(l){
+        return new Paragraph({
+          spacing:{before:0,after:40},
+          children:[N(l)]
+        });
+      });
+      if(!paras.length) paras=[new Paragraph({children:[N('')]})];
+      return new TableCell({
+        width:{size:7830,type:WidthType.DXA},
+        borders:ab,
+        margins:{top:80,bottom:80,left:120,right:120},
+        children:paras
+      });
+    };
+
+    // Linha da tabela principal com altura mínima
+    var TR=function(h,cells){
+      return new TableRow({height:{value:h,rule:HeightRule.AT_LEAST},children:cells});
+    };
+
+    // ── dados do formulário ──
+    var escola  = document.getElementById('escola').value||'';
+    var prof    = document.getElementById('professor').value||'';
+    var area    = ST.areas.join(', ');
+    var comp    = document.getElementById('componente').value||'';
+    var areaFull= [area,comp].filter(Boolean).join(' — ');
+    var tema    = document.getElementById('temaGerador').value||'';
+    var turma   = document.getElementById('turma').value||'';
+    var hab     = getHabText();
+    var cont    = document.getElementById('conteudo').value||'';
+    var crit    = getCrits().map(function(c,i){return (i+1)+'. '+c;}).join('\n');
+    var instr   = getInstrs();
+    var met     = document.getElementById('metodologia').value||'';
+    var carga   = document.getElementById('cargaHoraria').value||'';
+    var refs    = document.getElementById('referencias').value||'';
+
+    // ── logo via URL ──
+    var logoData;
+    try{
+      var logoResp=await fetch(window.LOGO_URL);
+      logoData=await logoResp.arrayBuffer();
+    }catch(e){
+      logoData=null;
+      console.warn('Logo não carregado:',e);
+    }
+
+    // ── cabeçalho: logo + dados institucionais ──
+    // Tabela: total 10343, cols [1845, 8498]
+    var headerCellLogo = new TableCell({
+      width:{size:1845,type:WidthType.DXA},
+      borders:ab,
+      margins:{top:60,bottom:60,left:60,right:60},
+      verticalAlign:VerticalAlign.CENTER,
+      children:[new Paragraph({
+        alignment:AlignmentType.CENTER,
+        children: logoData
+          ? [new ImageRun({data:logoData,transformation:{width:55,height:54},type:'png'})]
+          : [N('')]
+      })]
+    });
+
+    var headerCellInfo = new TableCell({
+      width:{size:8498,type:WidthType.DXA},
+      borders:ab,
+      margins:{top:60,bottom:60,left:120,right:120},
+      children:[
+        new Paragraph({alignment:AlignmentType.CENTER,children:[B('ESTADO DE SANTA CATARINA')]}),
+        new Paragraph({alignment:AlignmentType.CENTER,children:[B('SECRETARIA DE ESTADO DA EDUCAÇÃO')]}),
+        new Paragraph({alignment:AlignmentType.CENTER,children:[B('NOME DA ESCOLA: '+escola)]}),
+        new Paragraph({alignment:AlignmentType.CENTER,children:[B('PROFESSOR: '+prof)]})
+      ]
+    });
+
+    var headerTable = new Table({
+      width:{size:10343,type:WidthType.DXA},
+      columnWidths:[1845,8498],
+      rows:[new TableRow({children:[headerCellLogo,headerCellInfo]})]
+    });
+
+    // ── tabela principal (10 linhas do modelo original) ──
+    // Ordem e labels EXATOS do modelo .docx fornecido
+    var mainTable = new Table({
+      width:{size:10350,type:WidthType.DXA},
+      columnWidths:[2520,7830],
+      rows:[
+        TR(538, [LC('Área(s) do conhecimento/Componente curricular'), VC(areaFull)]),
+        TR(546, [LC('Tema Gerador'),                                   VC(tema)]),
+        TR(398, [LC('Turma/Etapa'),                                    VC(turma)]),
+        TR(559, [LC('Habilidade(s) selecionada(s)'),                   VC(hab)]),
+        TR(709, [LC('Objeto de conhecimento/estudo'),                  VC(cont)]),
+        TR(1144,[LC('Critério(s) de avaliação'),                       VC(crit)]),
+        TR(1144,[LC('Instrumento de avaliação'),                       VC(instr)]),
+        TR(570, [LC('Caminho metodológico'),                           VC(met)]),
+        TR(1095,[LC('Tempo de duração do plano'),                      VC(carga)]),
+        TR(1144,[LC('Referências'),                                    VC(refs)])
+      ]
+    });
+
+    // ── documento ──
+    var doc=new Document({
+      sections:[{
+        properties:{
+          page:{
+            size:{width:11906,height:16838},
+            // Margens do modelo: top:426 right:707 bottom:709 left:851
+            margin:{top:426,right:707,bottom:709,left:851}
+          }
+        },
+        children:[
+          headerTable,
+          new Paragraph({spacing:{before:80,after:40}}),
+          new Paragraph({
+            alignment:AlignmentType.CENTER,
+            spacing:{before:0,after:0},
+            children:[B('PLANO DE AULA')]
+          }),
+          new Paragraph({spacing:{before:40,after:0}}),
+          mainTable
+        ]
+      }]
+    });
+
+    var blob=await Packer.toBlob(doc);
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    a.download='Plano_'+((prof||'CEJA').replace(/[^a-zA-Z0-9]/g,'_'))+'.docx';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    st.textContent='✅ Documento exportado com sucesso!';
+    setTimeout(function(){st.textContent='';},5000);
+
+  }catch(err){
+    console.error('exportDocx error:',err);
+    st.className='status-msg err';
+    st.textContent='Erro: '+err.message;
+  }
+  btn.disabled=false;
+}
+
+function salvarChaveGemini(){
+  var k=document.getElementById('geminiKeyInput').value.trim();
+  if(!k){alert('Cole a chave da API Gemini no campo.');return;}
+  window.GEMINI_KEY=k;
+  try{localStorage.setItem('gemini_api_key',k);}catch(e){}
+  document.getElementById('geminiConfigPanel').style.background='#d4edda';
+  document.getElementById('geminiConfigPanel').style.borderColor='#28a745';
+  setTimeout(function(){
+    document.getElementById('geminiConfigPanel').style.display='none';
+  },1500);
+}
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',function(){
+  try{var k=localStorage.getItem('gemini_api_key');if(k){window.GEMINI_KEY=k;document.getElementById('geminiKeyInput').value=k;document.getElementById('geminiConfigPanel').style.display='none';}}catch(e){}
+  document.getElementById('dataInicio').value=new Date().toISOString().split('T')[0];
+  filterSkills();
+});
+</script>
+</body>
+</html>
