@@ -687,6 +687,18 @@ var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território 
 var GEMINI_API_KEY = ''; // Cole sua chave aqui ou use campo abaixo
 var GEMINI_MODEL = 'gemini-2.0-flash';
 
+// ── Rotação automática de chaves ──
+var GEMINI_KEYS = [
+  'AIzaSyDb98OewBd20ViXqNsY34JGcaDov-YSXAg',
+  'AIzaSyBJK7FZh6Qo1wyXUomJ9C79tD_S91RxP1g'
+];
+var _keyIndex = 0;
+function getNextKey(){
+  var k = GEMINI_KEYS[_keyIndex % GEMINI_KEYS.length];
+  _keyIndex++;
+  return k;
+}
+
 // ── Debounce: evita chamadas repetidas enquanto usuário digita ──
 function debounce(fn, delay){
   var timer;
@@ -699,7 +711,7 @@ function debounce(fn, delay){
 
 // ── Retry com backoff para erro 429 (Too Many Requests) ──
 async function callGemini(prompt, _retry){
-  var key = window.GEMINI_KEY || GEMINI_API_KEY;
+  var key = window.GEMINI_KEY || getNextKey() || GEMINI_API_KEY;
   if(!key) throw new Error('Chave da API Gemini não configurada. Clique em ⚙️ Configurar IA para inserir sua chave.');
   var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+key;
   var body = {
