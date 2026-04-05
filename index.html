@@ -178,6 +178,48 @@ body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transpar
 .saved-item-date{font-size:.74rem;color:#888;}
 .saved-item-btns{display:flex;gap:5px;}
 
+
+/* ===== ADMIN PANEL ===== */
+#adminOverlay{display:none;position:fixed;inset:0;background:rgba(10,20,40,.92);z-index:9999;align-items:center;justify-content:center;}
+#adminOverlay.open{display:flex;}
+.admin-modal{background:#0f1923;border:2px solid #1a5276;border-radius:12px;padding:0;width:min(700px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.7);font-family:'Sora',sans-serif;}
+.admin-header{background:linear-gradient(135deg,#1a5276,#0d3349);padding:20px 28px;display:flex;align-items:center;gap:12px;border-radius:10px 10px 0 0;}
+.admin-header h2{color:#fff;font-size:1.1rem;font-weight:700;flex:1;}
+.admin-header .admin-badge{background:#e74c3c;color:#fff;font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.06em;}
+.admin-body{padding:24px 28px;}
+.admin-section{margin-bottom:24px;padding:18px;background:#1a2535;border-radius:8px;border:1px solid #2c3e50;}
+.admin-section h3{color:#90caf9;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.admin-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.admin-field label{font-size:.74rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.04em;}
+.admin-field input{font-family:'Sora',sans-serif;font-size:.85rem;background:#0f1923;border:1.5px solid #2c3e50;border-radius:5px;padding:8px 12px;color:#fff;outline:none;width:100%;}
+.admin-field input:focus{border-color:#1a5276;box-shadow:0 0 0 3px rgba(26,82,118,.3);}
+.admin-status{font-size:.8rem;padding:8px 12px;border-radius:5px;margin-top:6px;}
+.admin-status.ok{background:#1e3a2a;color:#4caf50;border:1px solid #2e7d32;}
+.admin-status.err{background:#3a1e1e;color:#ef9a9a;border:1px solid #7d2e2e;}
+.admin-status.info{background:#1a2a3a;color:#90caf9;border:1px solid #1a5276;}
+.btn-admin{font-family:'Sora',sans-serif;font-weight:600;font-size:.82rem;padding:8px 18px;border-radius:5px;cursor:pointer;border:none;transition:all .18s;}
+.btn-admin-pri{background:#1a5276;color:#fff;}
+.btn-admin-pri:hover{background:#2471a3;}
+.btn-admin-dan{background:#922b21;color:#fff;}
+.btn-admin-dan:hover{background:#c0392b;}
+.btn-admin-sec{background:#2c3e50;color:#aaa;}
+.btn-admin-sec:hover{background:#34495e;color:#fff;}
+.admin-draft-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:5px;background:#0f1923;border:1px solid #2c3e50;margin-bottom:6px;font-size:.78rem;}
+.admin-draft-name{flex:1;color:#fff;font-weight:600;}
+.admin-draft-date{color:#888;font-size:.72rem;}
+
+/* ===== LOGIN OVERLAY ===== */
+#loginOverlay{display:none;position:fixed;inset:0;background:rgba(10,20,40,.97);z-index:10000;align-items:center;justify-content:center;flex-direction:column;}
+#loginOverlay.open{display:flex;}
+.login-box{background:#0f1923;border:2px solid #1a5276;border-radius:12px;padding:36px 40px;width:min(400px,92vw);text-align:center;}
+.login-box h2{color:#fff;font-size:1.2rem;font-weight:700;margin-bottom:6px;}
+.login-box p{color:#aaa;font-size:.82rem;margin-bottom:24px;}
+.login-box input{width:100%;font-family:'Sora',sans-serif;font-size:.88rem;background:#1a2535;border:1.5px solid #2c3e50;border-radius:6px;padding:10px 14px;color:#fff;outline:none;text-align:center;letter-spacing:.1em;margin-bottom:10px;}
+.login-box input:focus{border-color:#1a5276;}
+.login-err{color:#ef9a9a;font-size:.78rem;min-height:18px;margin-bottom:10px;}
+.login-skip{color:#555;font-size:.74rem;margin-top:16px;cursor:pointer;text-decoration:underline;}
+.login-skip:hover{color:#888;}
+
 @media(max-width:700px){
   .form-row,.form-row.three,.dissect-grid{grid-template-columns:1fr;}
   .card{padding:16px 14px;}
@@ -197,17 +239,90 @@ body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transpar
     <div class="nav-step" onclick="goTo(3)">4. Metodologia</div>
     <div class="nav-step" onclick="goTo(4)">5. Avaliação</div>
     <div class="nav-step" onclick="goTo(5)">6. Revisão</div>
-  <button onclick="document.getElementById('geminiConfigPanel').style.display='flex'" style="background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem;white-space:nowrap;margin-left:8px;">⚙️ Configurar IA</button>
+  <!-- Botão admin — visível só quando logado como admin -->
+  <button id="btnAdminPanel" onclick="abrirAdmin()" style="display:none;background:rgba(231,76,60,.3);border:1.5px solid rgba(231,76,60,.6);color:#ffcdd2;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem;white-space:nowrap;margin-left:8px;">🔐 Admin</button>
   </div>
 </nav>
 
-<!-- ===== GEMINI KEY CONFIG ===== -->
-<div id="geminiConfigPanel" style="background:#fff3cd;border:1px solid #ffc107;padding:8px 18px;font-size:.8rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-  <span>🔑 <strong>IA Gemini:</strong></span>
-  <input type="password" id="geminiKeyInput" placeholder="Cole sua chave da API Gemini aqui (AIza...)" style="flex:1;min-width:260px;padding:5px 9px;border:1px solid #ccc;border-radius:4px;font-size:.8rem;" oninput="window.GEMINI_KEY=this.value;">
-  <button onclick="salvarChaveGemini()" style="padding:5px 14px;background:#1a5276;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.8rem;">✅ Salvar</button>
-  <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:.75rem;color:#555;">Obter chave gratuita →</a>
-  <button onclick="document.getElementById('geminiConfigPanel').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:1rem;">✕</button>
+<!-- ===== GEMINI CONFIG PANEL (hidden, admin only) ===== -->
+<div id="geminiConfigPanel" style="display:none;">
+  <input type="password" id="geminiKeyInput" style="display:none;" oninput="window.GEMINI_KEY=this.value;">
+</div>
+
+<!-- ===== LOGIN OVERLAY ===== -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <div style="font-size:2.5rem;margin-bottom:8px;">🔐</div>
+    <h2>Sistema de Planejamento BNCC</h2>
+    <p>Digite o código de acesso para continuar</p>
+    <input type="password" id="loginInput" placeholder="••••••••" maxlength="30"
+      onkeydown="if(event.key==='Enter')tentarLogin()">
+    <div class="login-err" id="loginErr"></div>
+    <button class="btn-admin btn-admin-pri" style="width:100%;padding:10px;" onclick="tentarLogin()">Entrar →</button>
+    <div style="margin-top:10px;">
+      <span style="font-size:.74rem;color:#555;">Prof. Lafaiete Erkmann &nbsp;|&nbsp; © Todos os direitos reservados</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN OVERLAY ===== -->
+<div id="adminOverlay">
+  <div class="admin-modal">
+    <div class="admin-header">
+      <span style="font-size:1.4rem;">🔐</span>
+      <h2>Painel Administrativo</h2>
+      <span class="admin-badge">ADMIN</span>
+      <button onclick="fecharAdmin()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:1.2rem;margin-left:8px;">✕</button>
+    </div>
+    <div class="admin-body">
+
+      <!-- Chave IA -->
+      <div class="admin-section">
+        <h3>🔑 Chave da API Gemini (IA)</h3>
+        <div class="admin-field">
+          <label>Chave de API (AIza...)</label>
+          <input type="password" id="adminKeyInput" placeholder="Cole a chave aqui...">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-admin btn-admin-pri" onclick="adminSalvarChave()">✅ Salvar chave</button>
+          <button class="btn-admin btn-admin-sec" onclick="adminVerChave()">👁 Ver chave atual</button>
+          <button class="btn-admin btn-admin-dan" onclick="adminApagarChave()">🗑 Apagar chave</button>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:.74rem;color:#90caf9;align-self:center;">Obter chave gratuita →</a>
+        </div>
+        <div class="admin-status info" id="adminKeyStatus" style="display:none;"></div>
+      </div>
+
+      <!-- Rascunhos -->
+      <div class="admin-section">
+        <h3>💾 Gerenciar Rascunhos dos Professores</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="btn-admin btn-admin-pri" onclick="adminListarRascunhos()">🔄 Atualizar lista</button>
+          <button class="btn-admin btn-admin-dan" onclick="adminApagarTodos()">🗑 Apagar TODOS</button>
+        </div>
+        <div id="adminDraftList"><div style="color:#555;font-size:.8rem;font-style:italic;">Clique em "Atualizar lista" para ver os rascunhos.</div></div>
+      </div>
+
+      <!-- Senha admin -->
+      <div class="admin-section">
+        <h3>🔒 Segurança</h3>
+        <div class="admin-field">
+          <label>Nova senha de admin</label>
+          <input type="password" id="adminNovaSenha" placeholder="Digite nova senha...">
+        </div>
+        <div class="admin-field">
+          <label>Confirmar nova senha</label>
+          <input type="password" id="adminConfSenha" placeholder="Repita a senha...">
+        </div>
+        <button class="btn-admin btn-admin-pri" onclick="adminTrocarSenha()">🔒 Alterar senha</button>
+        <div class="admin-status" id="adminSenhaStatus" style="display:none;"></div>
+      </div>
+
+      <!-- Info -->
+      <div style="font-size:.72rem;color:#555;text-align:center;margin-top:8px;">
+        © Prof. Lafaiete Erkmann — Sistema de Planejamento BNCC
+      </div>
+    </div>
+  </div>
 </div>
 <div class="pw">
 <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:16%"></div></div>
@@ -1153,22 +1268,153 @@ async function exportDocx(){
   btn.disabled=false;
 }
 
-function salvarChaveGemini(){
-  var k=document.getElementById('geminiKeyInput').value.trim();
-  if(!k){alert('Cole a chave da API Gemini no campo.');return;}
-  window.GEMINI_KEY=k;
-  try{localStorage.setItem('gemini_api_key',k);}catch(e){}
-  document.getElementById('geminiConfigPanel').style.background='#d4edda';
-  document.getElementById('geminiConfigPanel').style.borderColor='#28a745';
-  setTimeout(function(){
-    document.getElementById('geminiConfigPanel').style.display='none';
-  },1500);
+// ===== AUTH / ADMIN SYSTEM =====
+// Senha padrão do administrador — mude aqui ou pelo painel de segurança
+var ADMIN_CODE_DEFAULT = 'erkmann2025';
+function getAdminCode(){try{return localStorage.getItem('bncc_admin_code')||ADMIN_CODE_DEFAULT;}catch(e){return ADMIN_CODE_DEFAULT;}}
+var IS_ADMIN = false;
+
+function tentarLogin(){
+  var v = document.getElementById('loginInput').value.trim();
+  var err = document.getElementById('loginErr');
+  if(!v){err.textContent='Digite o código de acesso.';return;}
+  if(v === getAdminCode()){
+    // Login como ADMIN
+    IS_ADMIN = true;
+    document.getElementById('loginOverlay').classList.remove('open');
+    document.getElementById('btnAdminPanel').style.display='inline-block';
+    iniciarSistema();
+  } else if(v.length >= 3){
+    // Login como PROFESSOR (qualquer código com 3+ chars que não seja admin)
+    IS_ADMIN = false;
+    document.getElementById('loginOverlay').classList.remove('open');
+    document.getElementById('btnAdminPanel').style.display='none';
+    iniciarSistema();
+  } else {
+    err.textContent='Código inválido. Verifique com o administrador.';
+    document.getElementById('loginInput').value='';
+    document.getElementById('loginInput').focus();
+  }
 }
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded',function(){
-  try{var k=localStorage.getItem('gemini_api_key');if(k){window.GEMINI_KEY=k;document.getElementById('geminiKeyInput').value=k;document.getElementById('geminiConfigPanel').style.display='none';}}catch(e){}
+
+function iniciarSistema(){
+  // Carrega chave da IA de forma transparente para professores
+  try{
+    var k=localStorage.getItem('gemini_api_key');
+    if(k){window.GEMINI_KEY=k;}
+  }catch(e){}
   document.getElementById('dataInicio').value=new Date().toISOString().split('T')[0];
   filterSkills();
+}
+
+// ── PAINEL ADMIN ─────────────────────────────────────────────────────────────
+function abrirAdmin(){
+  if(!IS_ADMIN){return;}
+  var k=localStorage.getItem('gemini_api_key')||'';
+  document.getElementById('adminKeyInput').value=k?'(chave salva — oculta por segurança)':'';
+  document.getElementById('adminOverlay').classList.add('open');
+  adminListarRascunhos();
+}
+
+function fecharAdmin(){
+  document.getElementById('adminOverlay').classList.remove('open');
+  document.getElementById('adminKeyStatus').style.display='none';
+}
+
+function adminSalvarChave(){
+  var k=document.getElementById('adminKeyInput').value.trim();
+  if(!k||k.startsWith('(chave salva')){
+    adminStatus('adminKeyStatus','err','Digite a chave no campo primeiro.');return;
+  }
+  if(!k.startsWith('AIza')){
+    adminStatus('adminKeyStatus','err','Chave inválida — deve começar com "AIza".');return;
+  }
+  window.GEMINI_KEY=k;
+  try{localStorage.setItem('gemini_api_key',k);}catch(e){}
+  document.getElementById('adminKeyInput').value='(chave salva — oculta por segurança)';
+  adminStatus('adminKeyStatus','ok','✅ Chave salva com sucesso! A IA está ativa para todos os professores.');
+}
+
+function adminVerChave(){
+  var k=localStorage.getItem('gemini_api_key')||'';
+  if(!k){adminStatus('adminKeyStatus','err','Nenhuma chave configurada.');return;}
+  adminStatus('adminKeyStatus','info','Chave atual: '+k.substring(0,8)+'••••••••'+k.substring(k.length-4));
+}
+
+function adminApagarChave(){
+  if(!confirm('Apagar a chave de IA? Os professores não conseguirão usar a IA até você configurar uma nova.'))return;
+  window.GEMINI_KEY='';
+  try{localStorage.removeItem('gemini_api_key');}catch(e){}
+  document.getElementById('adminKeyInput').value='';
+  adminStatus('adminKeyStatus','err','🗑 Chave removida. A IA está desativada.');
+}
+
+function adminListarRascunhos(){
+  var planos=getSavedPlanos();
+  var el=document.getElementById('adminDraftList');
+  if(!planos.length){el.innerHTML='<div style="color:#555;font-size:.8rem;font-style:italic;">Nenhum rascunho salvo.</div>';return;}
+  el.innerHTML=planos.map(function(p,i){
+    var dt=p.savedAt?new Date(p.savedAt).toLocaleString('pt-BR'):'';
+    return '<div class="admin-draft-item">'+
+      '<span class="admin-draft-name">'+esc(p.label||'Rascunho '+(i+1))+'</span>'+
+      '<span class="admin-draft-date">'+dt+'</span>'+
+      '<button class="btn-admin btn-admin-pri" style="font-size:.7rem;padding:3px 8px;" onclick="adminCarregarRascunho('+i+')">📂 Abrir</button>'+
+      '<button class="btn-admin btn-admin-dan" style="font-size:.7rem;padding:3px 8px;" onclick="adminDeletarRascunho('+i+')">🗑</button>'+
+    '</div>';
+  }).join('');
+}
+
+function adminCarregarRascunho(idx){
+  if(!confirm('Carregar este rascunho no sistema? O conteúdo atual não salvo será perdido.'))return;
+  var planos=getSavedPlanos();
+  if(!planos[idx])return;
+  restaurarEstado(planos[idx]);
+  fecharAdmin();
+  goTo(0);
+}
+
+function adminDeletarRascunho(idx){
+  if(!confirm('Excluir este rascunho permanentemente?'))return;
+  var planos=getSavedPlanos();
+  planos.splice(idx,1);
+  setSavedPlanos(planos);
+  adminListarRascunhos();
+}
+
+function adminApagarTodos(){
+  if(!confirm('Apagar TODOS os rascunhos salvos? Esta ação não pode ser desfeita.'))return;
+  setSavedPlanos([]);
+  adminListarRascunhos();
+}
+
+function adminTrocarSenha(){
+  var n1=document.getElementById('adminNovaSenha').value.trim();
+  var n2=document.getElementById('adminConfSenha').value.trim();
+  if(!n1||n1.length<4){adminStatus('adminSenhaStatus','err','A senha deve ter pelo menos 4 caracteres.');return;}
+  if(n1!==n2){adminStatus('adminSenhaStatus','err','As senhas não coincidem.');return;}
+  try{localStorage.setItem('bncc_admin_code',n1);}catch(e){}
+  document.getElementById('adminNovaSenha').value='';
+  document.getElementById('adminConfSenha').value='';
+  adminStatus('adminSenhaStatus','ok','✅ Senha alterada! Use a nova senha no próximo login.');
+}
+
+function adminStatus(id,tipo,msg){
+  var el=document.getElementById(id);
+  el.className='admin-status '+tipo;
+  el.textContent=msg;
+  el.style.display='block';
+  setTimeout(function(){el.style.display='none';},6000);
+}
+
+// Manter compatibilidade com função antiga
+function salvarChaveGemini(){adminSalvarChave();}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',function(){
+  // Mostrar tela de login
+  document.getElementById('loginOverlay').classList.add('open');
+  document.getElementById('loginInput').focus();
+  filterSkills(); // carrega DB mesmo antes do login
 });
 </script>
 
