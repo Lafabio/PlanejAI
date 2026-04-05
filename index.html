@@ -163,6 +163,21 @@ body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transpar
 .alert-info{background:#e8f4fd;border:1px solid #aed6f1;border-radius:6px;padding:10px 14px;font-size:.82rem;color:#1a5276;margin-bottom:12px;}
 .alert-warn{background:#fef9e7;border:1px solid #f9e79f;border-radius:6px;padding:10px 14px;font-size:.82rem;color:#7d6608;margin-bottom:12px;}
 
+
+/* ===== SAVE/LOAD PLANO ===== */
+.save-bar{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:var(--shadow);}
+.save-bar-title{font-size:.8rem;font-weight:700;color:#5a5240;text-transform:uppercase;letter-spacing:.04em;flex:1;}
+.btn-save{background:#6c3483;color:#fff;border-color:#6c3483;box-shadow:0 3px 10px rgba(108,52,131,.22);}
+.btn-save:hover{background:#512e5f;transform:translateY(-1px);}
+.btn-load{background:#117a65;color:#fff;border-color:#117a65;}
+.btn-load:hover{background:#0e6655;transform:translateY(-1px);}
+.save-toast{font-size:.8rem;color:#6c3483;font-style:italic;flex:1;text-align:right;}
+#savedPlanosList{display:none;background:#f8f9fa;border:1.5px solid var(--border);border-radius:8px;padding:14px;margin-top:8px;}
+.saved-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;border:1.5px solid var(--border);background:#fff;margin-bottom:7px;font-size:.82rem;}
+.saved-item-name{flex:1;font-weight:600;color:var(--ink);}
+.saved-item-date{font-size:.74rem;color:#888;}
+.saved-item-btns{display:flex;gap:5px;}
+
 @media(max-width:700px){
   .form-row,.form-row.three,.dissect-grid{grid-template-columns:1fr;}
   .card{padding:16px 14px;}
@@ -196,6 +211,19 @@ body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transpar
 </div>
 <div class="pw">
 <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:16%"></div></div>
+
+<!-- ===== SAVE BAR ===== -->
+<div class="save-bar">
+  <span class="save-bar-title">💾 Rascunho do Plano</span>
+  <button class="btn btn-save" onclick="salvarPlano()">💾 Salvar rascunho</button>
+  <button class="btn btn-load" onclick="toggleSavedList()">📂 Carregar rascunho</button>
+  <span class="save-toast" id="saveToast"></span>
+</div>
+<div id="savedPlanosList">
+  <div style="font-size:.8rem;font-weight:700;color:#555;margin-bottom:10px;">📋 Rascunhos salvos:</div>
+  <div id="savedItemsContainer"></div>
+  <div id="noSavedMsg" style="font-size:.82rem;color:#888;font-style:italic;">Nenhum rascunho salvo ainda.</div>
+</div>
 
 <!-- ===== PAGE 0: IDENTIFICAÇÃO ===== -->
 <div class="page active" id="page0">
@@ -680,7 +708,7 @@ function buildChecklist(){
 }
 
 // ===== AI =====
-var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território Catarinense) e Taxonomia de Bloom para o Ensino Médio e EJA. Regras: 1) Nunca troque o verbo da habilidade — isso muda o nível cognitivo. 2) Critérios devem ser observáveis e derivados do próprio verbo. 3) O conteúdo é meio para desenvolver a habilidade. 4) A metodologia deve engajar o aluno no mesmo nível cognitivo do verbo. 5) Critérios vagos (\"demonstrar progressão\", \"mostrar evolução\") NÃO são aceitos. Responda sempre em português do Brasil. Seja direto e prático.';
+var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território Catarinense) e Taxonomia de Bloom para o Ensino Médio e EJA. Regras invioláveis: 1) NUNCA troque o verbo da habilidade — ele define o nível cognitivo. 2) Os conteúdos devem contemplar explicitamente o VERBO da habilidade — pergunte-se: este conteúdo permite ao aluno exercer este verbo? 3) Ao sugerir conteúdos, sempre indique conexões interdisciplinares possíveis com outras áreas do EM quando pertinente. 4) O caminho metodológico deve integrar: o verbo + os conteúdos escolhidos + as estratégias/metodologias ativas selecionadas + o contexto EJA/EM, com 3 momentos: inicial (mobilização), desenvolvimento (prática no nível cognitivo do verbo) e sistematização. 5) Critérios de avaliação devem contemplar a aquisição/desenvolvimento da habilidade, derivados do verbo, observáveis e mensuráveis. 6) Instrumentos sugeridos devem ser coerentes com os critérios e com as estratégias escolhidas. 7) Critérios vagos NÃO são aceitos. Responda sempre em português do Brasil. Seja direto e prático.';
 
 // ===== GEMINI API =====
 var GEMINI_API_KEY = ''; // Cole sua chave aqui ou use campo abaixo
@@ -697,7 +725,7 @@ async function callGemini(prompt, modelIdx){
   var body = {
     system_instruction:{parts:[{text: SYS}]},
     contents:[{role:'user',parts:[{text:prompt}]}],
-    generationConfig:{maxOutputTokens:1200,temperature:0.7}
+    generationConfig:{maxOutputTokens:3000,temperature:0.7}
   };
   var r;
   try { r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
@@ -742,7 +770,11 @@ async function sugerirConteudo(){
   var b=document.getElementById('btnCont'),r=document.getElementById('iaCont');
   if(!getHabText()){alert('Selecione a habilidade primeiro.');return;}
   b.disabled=true;r.className='ai-result loading';r.innerHTML='<span class="spinner"></span>Sugerindo...';
-  try{var t=await callGemini(habInfo()+'\n\nSugira 5 a 8 objetos de conhecimento (conteúdos) que são MEIOS para desenvolver esta habilidade.\nIndique brevemente como cada conteúdo contribui para o verbo da habilidade.\nFormate como lista numerada.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');if(!document.getElementById('conteudo').value)document.getElementById('conteudo').value=t;}
+  try{
+    var tema2=document.getElementById('temaGerador').value.trim();
+    var turma2=document.getElementById('turma').value.trim();
+    var p=habInfo()+'\nTema gerador: '+(tema2||'não informado')+'\nTurma: '+(turma2||'não informado')+'\n\nSugira 5 a 8 objetos de conhecimento (conteúdos) que sejam MEIOS para o aluno exercer o VERBO desta habilidade.\nPara cada conteúdo:\n- Explique brevemente como ele permite ao aluno exercer o verbo (não apenas o tema).\n- Indique conexões interdisciplinares possíveis com outras áreas/componentes do EM (Língua Portuguesa, História, Matemática, Arte, Filosofia etc.) quando pertinente.\nFormate como lista numerada.';
+    var t=await callGemini(p);r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');if(!document.getElementById('conteudo').value)document.getElementById('conteudo').value=t;}
   catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
   b.disabled=false;
 }
@@ -754,7 +786,10 @@ async function sugerirMet(){
   var cont=document.getElementById('conteudo').value.trim();
   var turma=document.getElementById('turma').value.trim();
   var tema=document.getElementById('temaGerador').value.trim();
-  try{var t=await callGemini(habInfo()+'\nTema gerador: '+(tema||'não informado')+'\nTurma: '+(turma||'não informado')+'\nConteúdo: '+(cont||'não especificado')+'\n\nElabore um roteiro metodológico em 3 momentos (inicial, desenvolvimento, sistematização) que EXIJA do aluno o mesmo nível cognitivo do verbo da habilidade. Máximo 3 parágrafos. Foco no que o ALUNO faz. Adequado para EJA/Ensino Médio.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');if(!document.getElementById('metodologia').value)document.getElementById('metodologia').value=t;}
+  try{
+    var metSel=Array.from(document.querySelectorAll('#methodGrid .method-chip.selected')).map(function(e){return e.textContent.trim();}).join(', ');
+    var p=habInfo()+'\nTema gerador: '+(tema||'não informado')+'\nTurma: '+(turma||'não informado')+'\nConteúdo/Objetos de conhecimento: '+(cont||'não especificado')+'\nEstratégias/Metodologias ativas selecionadas: '+(metSel||'não selecionadas')+'\n\nElabore o CAMINHO METODOLÓGICO integrando TODOS os elementos acima.\nEstrutura obrigatória em 3 momentos:\n1. MOMENTO INICIAL (mobilização/ativação): Como engajar o aluno e ativar conhecimentos prévios usando as estratégias selecionadas.\n2. MOMENTO DE DESENVOLVIMENTO: Atividades que EXIJAM do aluno o mesmo nível cognitivo do VERBO da habilidade, usando os conteúdos como meio e as metodologias ativas escolhidas. Seja específico sobre O QUE O ALUNO FAZ.\n3. MOMENTO DE SISTEMATIZAÇÃO: Como consolidar a aprendizagem e verificar se o aluno desenvolveu a habilidade.\nContexto: EJA/Ensino Médio. Máximo 4 parágrafos. Foco no que o ALUNO faz, não no professor.';
+    var t=await callGemini(p);r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');if(!document.getElementById('metodologia').value)document.getElementById('metodologia').value=t;}
   catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
   b.disabled=false;
 }
@@ -763,9 +798,174 @@ async function sugerirCrit(){
   var b=document.getElementById('btnCrit'),r=document.getElementById('iaCrit');
   if(!getHabText()){alert('Selecione a habilidade primeiro.');return;}
   b.disabled=true;r.className='ai-result loading';r.innerHTML='<span class="spinner"></span>Elaborando critérios...';
-  try{var t=await callGemini(habInfo()+'\n\nElabore 4 critérios de avaliação OBSERVÁVEIS e ESPECÍFICOS.\nREGRAS: comece cada critério com verbo derivado da habilidade. NUNCA use: \"demonstrar progressão\", \"mostrar envolvimento\", \"aplicação prática e conexões\".\nFormato: frase curta, verbo na 3ª pessoa do singular. Exemplo correto: \"Analisa situações do cotidiano identificando fenômenos elétricos\".\nRetorne apenas a lista, um critério por linha.');r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');var lines=t.split('\n').map(function(l){return l.replace(/^[\d\.\-\•\*\s]+/,'').trim();}).filter(function(l){return l.length>5;});if(lines.length)setCrits(lines);}
+  try{
+    var met2=document.getElementById('metodologia').value.trim();
+    var cont2=document.getElementById('conteudo').value.trim();
+    var instrSel=Array.from(document.querySelectorAll('#instrGrid .method-chip.selected')).map(function(e){return e.textContent.trim();});
+    var instrDisp=['Resolução de situações-problema','Produção textual escrita','Apresentação oral','Atividade de análise','Mapa conceitual','Portfólio','Autoavaliação','Prova dissertativa','Rubrica','Observação sistemática','Relatório de atividade','Debate avaliativo'];
+    var p=habInfo()+'\nConteúdos definidos: '+(cont2||'não especificado')+'\nCaminho metodológico: '+(met2||'não descrito')+'\nInstrumentos já selecionados: '+(instrSel.length?instrSel.join(', '):'nenhum')+'\nInstrumentos disponíveis no sistema: '+instrDisp.join(', ')+'\n\nCom base em TUDO acima, elabore:\n\nPARTE 1 — CRITÉRIOS DE AVALIAÇÃO (4 critérios)\nRegras: cada critério começa com verbo derivado do verbo da habilidade, é observável e contempla a AQUISIÇÃO/DESENVOLVIMENTO da habilidade. NUNCA use: "demonstrar progressão", "mostrar envolvimento", "aplicação prática e conexões".\nFormato: verbo na 3ª pessoa do singular. Ex: "Analisa situações do cotidiano identificando fenômenos elétricos".\nRetorne os 4 critérios, um por linha, com prefixo CRIT:.\n\nPARTE 2 — INSTRUMENTOS RECOMENDADOS\nDos instrumentos disponíveis no sistema, indique quais são mais adequados para estes critérios e metodologia. Justifique brevemente cada indicação.\nRetorne com prefixo INSTR:';
+    var t=await callGemini(p);
+    r.className='ai-result';r.innerHTML=t.replace(/\n/g,'<br>');
+    var lines=t.split('\n');
+    var crits=lines.filter(function(l){return l.match(/^CRIT:/i);}).map(function(l){return l.replace(/^CRIT:/i,'').replace(/^[\d\.\-\•\*\s]+/,'').trim();}).filter(function(l){return l.length>5;});
+    if(crits.length)setCrits(crits);}
   catch(e){r.className='ai-result loading';r.innerHTML='⚠️ '+e.message;}
   b.disabled=false;
+}
+
+// ===== SALVAR / CARREGAR PLANO =====
+function coletarEstado(){
+  return {
+    v: 2,
+    savedAt: new Date().toISOString(),
+    escola: document.getElementById('escola').value,
+    professor: document.getElementById('professor').value,
+    turma: document.getElementById('turma').value,
+    dataInicio: document.getElementById('dataInicio').value,
+    cargaHoraria: document.getElementById('cargaHoraria').value,
+    temaGerador: document.getElementById('temaGerador').value,
+    contexto: document.getElementById('contexto').value,
+    componente: document.getElementById('componente').value,
+    areas: ST.areas.slice(),
+    bloomLevel: ST.bloomLevel,
+    currentHab: ST.currentHab,
+    codManual: document.getElementById('codManual').value,
+    habManual: document.getElementById('habManual').value,
+    conteudo: document.getElementById('conteudo').value,
+    interdisc: document.getElementById('interdisc').value,
+    metodologia: document.getElementById('metodologia').value,
+    recursos: document.getElementById('recursos').value,
+    criterios: getCrits(),
+    instrCompl: document.getElementById('instrCompl').value,
+    referencias: document.getElementById('referencias').value,
+    methodsSel: Array.from(document.querySelectorAll('#methodGrid .method-chip.selected')).map(function(e){return e.textContent.trim();}),
+    instrSel: Array.from(document.querySelectorAll('#instrGrid .method-chip.selected')).map(function(e){return e.textContent.trim();})
+  };
+}
+
+function restaurarEstado(s){
+  if(!s||s.v!==2)return false;
+  document.getElementById('escola').value=s.escola||'';
+  document.getElementById('professor').value=s.professor||'';
+  document.getElementById('turma').value=s.turma||'';
+  document.getElementById('dataInicio').value=s.dataInicio||'';
+  document.getElementById('cargaHoraria').value=s.cargaHoraria||'';
+  document.getElementById('temaGerador').value=s.temaGerador||'';
+  document.getElementById('contexto').value=s.contexto||'';
+  document.getElementById('componente').value=s.componente||'';
+  // Restaurar áreas
+  ST.areas=s.areas||[];
+  document.querySelectorAll('.area-chip').forEach(function(el){
+    var a=el.getAttribute('onclick').match(/'([^']+)'\)/);
+    if(a&&ST.areas.indexOf(a[1])>-1)el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+  // Restaurar habilidade
+  ST.currentHab=s.currentHab||null;
+  if(s.currentHab&&s.currentHab.cod){
+    selectSkill(s.currentHab.cod);
+  } else {
+    document.getElementById('codManual').value=s.codManual||'';
+    document.getElementById('habManual').value=s.habManual||'';
+  }
+  // Bloom
+  if(s.bloomLevel)selectBloom(s.bloomLevel);
+  // Conteúdo
+  document.getElementById('conteudo').value=s.conteudo||'';
+  document.getElementById('interdisc').value=s.interdisc||'';
+  document.getElementById('metodologia').value=s.metodologia||'';
+  document.getElementById('recursos').value=s.recursos||'';
+  document.getElementById('instrCompl').value=s.instrCompl||'';
+  document.getElementById('referencias').value=s.referencias||'';
+  // Critérios
+  if(s.criterios&&s.criterios.length)setCrits(s.criterios);
+  // Métodos selecionados
+  var ms=s.methodsSel||[];
+  document.querySelectorAll('#methodGrid .method-chip').forEach(function(el){
+    if(ms.indexOf(el.textContent.trim())>-1)el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+  // Instrumentos selecionados
+  var is=s.instrSel||[];
+  document.querySelectorAll('#instrGrid .method-chip').forEach(function(el){
+    if(is.indexOf(el.textContent.trim())>-1)el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+  return true;
+}
+
+function getSavedPlanos(){
+  try{var d=localStorage.getItem('bncc_planos');return d?JSON.parse(d):[];}catch(e){return[];}
+}
+function setSavedPlanos(arr){
+  try{localStorage.setItem('bncc_planos',JSON.stringify(arr));}catch(e){}
+}
+
+function salvarPlano(){
+  var nome=document.getElementById('professor').value.trim()||'Professor';
+  var hab=getHabText();
+  var cod=ST.currentHab&&ST.currentHab.cod?ST.currentHab.cod:(document.getElementById('codManual').value.trim()||'');
+  var label=nome+(cod?' — '+cod:'')+(hab?' — '+hab.substring(0,40)+'...':'');
+  var planos=getSavedPlanos();
+  // Verifica se já existe rascunho do mesmo cod
+  var idx=-1;
+  if(cod)idx=planos.findIndex(function(p){return p.cod===cod&&p.prof===nome;});
+  var estado=coletarEstado();
+  estado.label=label;
+  estado.cod=cod;
+  estado.prof=nome;
+  if(idx>-1){planos[idx]=estado;}else{planos.unshift(estado);}
+  if(planos.length>10)planos=planos.slice(0,10);
+  setSavedPlanos(planos);
+  var t=document.getElementById('saveToast');
+  t.textContent='✅ Salvo! '+new Date().toLocaleString('pt-BR');
+  setTimeout(function(){t.textContent='';},4000);
+  renderSavedList();
+}
+
+function toggleSavedList(){
+  var el=document.getElementById('savedPlanosList');
+  el.style.display=el.style.display==='none'||!el.style.display?'block':'none';
+  renderSavedList();
+}
+
+function renderSavedList(){
+  var planos=getSavedPlanos();
+  var cont=document.getElementById('savedItemsContainer');
+  var noMsg=document.getElementById('noSavedMsg');
+  if(!planos.length){cont.innerHTML='';noMsg.style.display='block';return;}
+  noMsg.style.display='none';
+  cont.innerHTML=planos.map(function(p,i){
+    var dt=p.savedAt?new Date(p.savedAt).toLocaleString('pt-BR'):'';
+    return '<div class="saved-item">'+
+      '<span class="saved-item-name">'+esc(p.label||'Rascunho '+(i+1))+'</span>'+
+      '<span class="saved-item-date">'+dt+'</span>'+
+      '<div class="saved-item-btns">'+
+        '<button class="btn btn-pri" style="padding:4px 10px;font-size:.75rem;" onclick="carregarPlano('+i+')">📂 Abrir</button>'+
+        '<button class="btn" style="padding:4px 8px;font-size:.75rem;background:#e74c3c;color:#fff;border-color:#e74c3c;" onclick="deletarPlano('+i+')">🗑</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function carregarPlano(idx){
+  var planos=getSavedPlanos();
+  if(!planos[idx])return;
+  if(!confirm('Carregar este rascunho? O que não foi salvo será perdido.'))return;
+  restaurarEstado(planos[idx]);
+  document.getElementById('savedPlanosList').style.display='none';
+  var t=document.getElementById('saveToast');
+  t.textContent='📂 Rascunho carregado!';
+  setTimeout(function(){t.textContent='';},3000);
+  goTo(0);
+}
+
+function deletarPlano(idx){
+  if(!confirm('Excluir este rascunho?'))return;
+  var planos=getSavedPlanos();
+  planos.splice(idx,1);
+  setSavedPlanos(planos);
+  renderSavedList();
 }
 
 // ===== EXPORT DOCX =====
