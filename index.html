@@ -132,9 +132,9 @@ body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transpar
 .chk-warn{border-color:#f9c74f;background:#fffbf0;}
 
 /* ===== AI BOX ===== */
-.ai-box{background:linear-gradient(135deg,#eef2ff,#f0f9ff);border:1.5px solid #c5cae9;border-radius:8px;padding:14px 18px;margin:12px 0;}
+.ai-box{background:linear-gradient(135deg,#eef2ff,#f0f9ff);border:1.5px solid #c5cae9;border-radius:8px;padding:14px 18px;margin:12px 0;overflow:visible;}
 .ai-box h4{color:#3949ab;font-size:.85rem;font-weight:700;margin-bottom:6px;}
-.ai-result{font-size:.85rem;color:#333;line-height:1.7;margin-top:9px;}
+.ai-result{font-size:.85rem;color:#333;line-height:1.7;margin-top:9px;white-space:pre-wrap;word-break:break-word;overflow:visible;max-height:none;}
 .ai-result.loading{color:#888;font-style:italic;}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid #c5cae9;border-top-color:#3949ab;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px;}
 @keyframes spin{to{transform:rotate(360deg);}}
