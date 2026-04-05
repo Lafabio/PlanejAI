@@ -238,7 +238,7 @@ body{background:#e8e5db;background-image:repeating-linear-gradient(0deg,transpar
     <div class="field" style="margin-bottom:14px;">
       <label>Buscar Habilidade</label>
       <div class="skill-selector-wrap">
-        <input type="text" class="skill-search" id="skillSearch" placeholder="Buscar por código, verbo ou tema... (ex: analisar, EM13CHS, linguagens)" oninput="debouncedFilter()" onfocus="openDropdown()" autocomplete="off">
+        <input type="text" class="skill-search" id="skillSearch" placeholder="Buscar por código, verbo ou tema... (ex: analisar, EM13CHS, linguagens)" oninput="filterSkills()" onfocus="openDropdown()" autocomplete="off">
         <div class="skill-dropdown" id="skillDropdown"></div>
       </div>
     </div>
@@ -507,7 +507,6 @@ function renderDropdown(skills){
   dd.classList.add('open');
 }
 
-var debouncedFilter = debounce(function(){ filterSkills(); }, 300);
 function filterSkills(){
   var q = document.getElementById('skillSearch').value.trim().toLowerCase();
   if(!q){filteredSkills=HABILIDADES_DB;renderDropdown(filteredSkills);return;}
@@ -685,35 +684,16 @@ var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território 
 
 // ===== GEMINI API =====
 var GEMINI_API_KEY = ''; // Cole sua chave aqui ou use campo abaixo
-var GEMINI_MODEL = 'gemini-2.0-flash';
+// Modelos em ordem de preferência — tenta o próximo se der 429
+var GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash', 'gemini-pro'];
+var GEMINI_MODEL_IDX = 0; // índice atual
 
-// ── Rotação automática de chaves ──
-var GEMINI_KEYS = [
-  'AIzaSyDb98OewBd20ViXqNsY34JGcaDov-YSXAg',
-  'AIzaSyBJK7FZh6Qo1wyXUomJ9C79tD_S91RxP1g'
-];
-var _keyIndex = 0;
-function getNextKey(){
-  var k = GEMINI_KEYS[_keyIndex % GEMINI_KEYS.length];
-  _keyIndex++;
-  return k;
-}
-
-// ── Debounce: evita chamadas repetidas enquanto usuário digita ──
-function debounce(fn, delay){
-  var timer;
-  return function(){
-    var args=arguments, ctx=this;
-    clearTimeout(timer);
-    timer=setTimeout(function(){ fn.apply(ctx,args); }, delay);
-  };
-}
-
-// ── Retry com backoff para erro 429 (Too Many Requests) ──
-async function callGemini(prompt, _retry){
-  var key = window.GEMINI_KEY || getNextKey() || GEMINI_API_KEY;
+async function callGemini(prompt, modelIdx){
+  if(modelIdx === undefined) modelIdx = GEMINI_MODEL_IDX;
+  var key = window.GEMINI_KEY || GEMINI_API_KEY;
   if(!key) throw new Error('Chave da API Gemini não configurada. Clique em ⚙️ Configurar IA para inserir sua chave.');
-  var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+key;
+  var model = GEMINI_MODELS[modelIdx] || GEMINI_MODELS[0];
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+key;
   var body = {
     system_instruction:{parts:[{text: SYS}]},
     contents:[{role:'user',parts:[{text:prompt}]}],
@@ -722,41 +702,26 @@ async function callGemini(prompt, _retry){
   var r;
   try { r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
   catch(e) { throw new Error('Erro de conexão com a API Gemini. Verifique sua internet e se a chave está correta.'); }
-
-  // Retry automático para 429 (cota por minuto) — até 3 tentativas
+  // Se 429, tenta o próximo modelo automaticamente
   if(r.status === 429){
-    var attempt = _retry || 1;
-    if(attempt <= 3){
-      var wait = attempt * 15; // 15s, 30s, 45s
-      // Mostra countdown no resultado se existir
-      var resEl = document.querySelector('.ai-result.loading');
-      var countdown = wait;
-      var timer = setInterval(function(){
-        if(resEl) resEl.innerHTML = '<span class="spinner"></span>Limite de requisições atingido. Tentando novamente em '+countdown+'s... (tentativa '+attempt+'/3)';
-        countdown--;
-        if(countdown < 0) clearInterval(timer);
-      }, 1000);
-      await new Promise(function(res){ setTimeout(res, wait * 1000); });
-      clearInterval(timer);
-      return callGemini(prompt, attempt + 1);
+    var nextIdx = modelIdx + 1;
+    if(nextIdx < GEMINI_MODELS.length){
+      console.warn('Modelo '+model+' com cota esgotada, tentando '+GEMINI_MODELS[nextIdx]+'...');
+      GEMINI_MODEL_IDX = nextIdx;
+      // Aguarda 2s antes de tentar novamente
+      await new Promise(function(res){setTimeout(res,2000);});
+      return callGemini(prompt, nextIdx);
     }
-    throw new Error('Limite de requisições da API atingido (erro 429). Aguarde 1 minuto e tente novamente, ou verifique sua cota em aistudio.google.com.');
+    // Todos os modelos esgotados — espera 60s e tenta do início
+    GEMINI_MODEL_IDX = 0;
+    throw new Error('Limite de requisições atingido em todos os modelos. Aguarde 1 minuto e tente novamente.');
   }
-
   var d = await r.json();
   if(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)
     return d.candidates[0].content.parts.map(function(p){return p.text||'';}).join('');
-  if(d.error){
-    // Mensagem amigável para erros comuns
-    var msg = d.error.message || '';
-    if(d.error.code === 429 || msg.toLowerCase().indexOf('quota') !== -1)
-      throw new Error('Cota da API esgotada. Aguarde alguns segundos e tente novamente. Para mais volume, acesse aistudio.google.com e ative o plano Pay-as-you-go (custo mínimo).');
-    throw new Error('Gemini: ' + msg);
-  }
+  if(d.error) throw new Error('Gemini ('+model+'): '+d.error.message);
   throw new Error('Resposta inesperada da API Gemini');
 }
-
-// callClaude removido — use callGemini
 
 function habInfo(){
   var h=ST.currentHab;
