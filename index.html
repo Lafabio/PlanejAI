@@ -685,7 +685,7 @@ var SYS='Você é um especialista em BNCC, CBTC (Currículo Base do Território 
 // ===== GEMINI API =====
 var GEMINI_API_KEY = ''; // Cole sua chave aqui ou use campo abaixo
 // Modelos em ordem de preferência — tenta o próximo se der 429
-var GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash-001', 'gemini-1.5-flash-8b-001'];
+var GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-3-flash-preview'];
 var GEMINI_MODEL_IDX = 0; // índice atual
 
 async function callGemini(prompt, modelIdx){
