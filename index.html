@@ -685,6 +685,33 @@ function openDropdown(){
   }
 }
 
+
+// ===== DISSECT HABILIDADE (verb / objeto / finalidade) =====
+function dissectTexto(texto, verboHint) {
+  var t = (texto||'').replace(/\.$/,'').trim();
+  var finalidade = '', main = t;
+  // Find LAST ", para " clause -> finalidade
+  var re = /,\s+para\s+/gi, m, paraMatch=null;
+  while((m=re.exec(t))!==null){paraMatch=m;}
+  if(paraMatch){
+    finalidade=t.substring(paraMatch.index+paraMatch[0].length).trim().replace(/\.$/,'');
+    main=t.substring(0,paraMatch.index).trim();
+  } else {
+    var altPats=[/,?\s+a fim de\s+(.+)$/i,/,?\s+com vistas (?:a|ao)\s+(.+)$/i,/,?\s+de modo a\s+(.+)$/i,/,?\s+de forma a\s+(.+)$/i];
+    for(var i=0;i<altPats.length;i++){
+      var am=main.match(altPats[i]);
+      if(am&&am[1].length>10){finalidade=am[1].trim().replace(/\.$/,'');main=main.substring(0,main.search(altPats[i])).trim();break;}
+    }
+  }
+  // Extract verbo — match compound "Verbo e Verbo" from start
+  var verbM=main.match(/^([A-ZÁÉÍÓÚÃÕÂÊÔÀÇÜ][a-záéíóúãõâêôàçü\-]+(\s+e\s+[a-záéíóúãõâêôàçü\-]+)?)/);
+  var verbo=verboHint||(verbM?verbM[1]:main.split(' ')[0]);
+  var objeto=main.toLowerCase().startsWith(verbo.toLowerCase())?main.substring(verbo.length).replace(/^[,\s]+/,''):main;
+  if(objeto)objeto=objeto.charAt(0).toUpperCase()+objeto.slice(1);
+  if(finalidade)finalidade=finalidade.charAt(0).toUpperCase()+finalidade.slice(1);
+  return {verbo:verbo,objeto:objeto,finalidade:finalidade};
+}
+
 function selectSkill(cod){
   var h = HABILIDADES_DB.find(function(x){return x.cod===cod;});
   if(!h)return;
@@ -715,9 +742,11 @@ function selectSkill(cod){
   var bc = bloomClasses[h.bloom]||'bl4-bg';
   document.getElementById('sc-bloom-badge').innerHTML='<span class="bloom-badge-lg '+bc+'">📊 Nível '+h.bloom+' — '+bloomNames[h.bloom]+'</span>';
   // Dissection
-  document.getElementById('dc-verb').textContent = h.verbo;
-  document.getElementById('dc-obj').textContent = h.objeto;
-  document.getElementById('dc-purp').textContent = h.finalidade;
+  // Dissect texto for verb/objeto/finalidade (smart, handles EF and EI records too)
+  var dis = dissectTexto(h.texto, h.verbo);
+  document.getElementById('dc-verb').textContent = dis.verbo || h.verbo || '—';
+  document.getElementById('dc-obj').textContent = dis.objeto || h.objeto || '—';
+  document.getElementById('dc-purp').textContent = dis.finalidade || h.finalidade || '—';
   // Auto-select bloom
   selectBloom(h.bloom);
   // Auto-fill componente if empty
